@@ -22,6 +22,6 @@ class Message
     public $latitude = 0.0;           // Standardwert für Breitengrad
 
     public $timestamp;                // Zeitstempel der Nachricht
-    public $id;                       // ID des Nachrichtentyps
+    public $messageType;                       // ID des Nachrichtentyps
     public $mmsi;                     // Maritime Mobile Service Identity (MMSI) des Senders
 }

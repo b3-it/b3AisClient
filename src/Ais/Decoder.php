@@ -7,11 +7,9 @@ namespace Ais;
 
 use Ais\Helper\Message;
 use Ais\Helper\Helper;
-use GuzzleHttpClient;
 
-
-require('Helper\Helper.php');
-require('Helper\Message.php');
+require('Helper/Helper.php');
+require('Helper/Message.php');
 
 
 
@@ -41,29 +39,29 @@ class Decoder extends Helper
      * Decodiert AIS-Daten und erstellt ein Nachrichtenobjekt.
      *
      * @param string $aisdata168 - Die AIS-Rohdaten (168 Bit).
-     * @param mixed $aux - Zusätzliche Daten (nicht verwendet).
      *
      * @return Message - Ein Nachrichtenobjekt mit den decodierten Informationen.
      */
-    public function decodeAIS($aisdata168, $aux)
+    public function decodeAIS($aisdata168)
     {
         // Initialisieren eines Nachrichtenobjekts
+        date_default_timezone_set('Europe/Berlin');
         $message = new Message();
-        $message->timestamp = time();
-        $message->id = bindec(substr($aisdata168, 0, 6));
+        $message->timestamp = date("Y-m-d H:i:s");
+        $message->messageType = bindec(substr($aisdata168, 0, 6));
         $message->mmsi = bindec(substr($aisdata168, 8, 30));
 
         // Klassifizieren der Nachricht anhand der ID
-        if ($message->id >= 1 && $message->id <= 3) {
+        if ($message->messageType >= 1 && $message->messageType <= 3) {
             $this->decodeType123Message($message, $aisdata168);
-        } elseif ($message->id == 5) {
+        } elseif ($message->messageType == 5) {
             $this->decodeType5Message($message, $aisdata168);
-        } elseif ($message->id == 18) {
+        } elseif ($message->messageType == 18) {
             $this->decodeType18Message($message, $aisdata168);
-        }elseif ($message->id == 19){
+        }elseif ($message->messageType == 19){
             $this->decodeType19Message($message, $aisdata168);
         }
-        elseif ($message->id == 24) {
+        elseif ($message->messageType == 24) {
             $this->decodeType24Message($message, $aisdata168);
         }
 

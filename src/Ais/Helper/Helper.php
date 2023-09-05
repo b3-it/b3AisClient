@@ -2,7 +2,12 @@
 
 namespace Ais\Helper;
 
-
+define('ERROR_MISSING_ASTERISK', -1);
+define('ERROR_INVALID_CHECKSUM_LENGTH', -2);
+define('ERROR_INVALID_NUMBER_OF_SEQUENCES', -3);
+define('ERROR_INVALID_SEQUENCE_NUMBER', -4);
+define('ERROR_INVALID_SEQUENCE_ORDER', -5);
+define('ERROR_INVALID_MULTIPART_MESSAGE', -6);
 /**
  * Die Klasse Helper enthält eine Sammlung von Hilfsfunktionen, die zur Dekodierung von AIS-Nachrichten
  * und zur Verarbeitung von Rohdaten verwendet werden. Diese Funktionen bieten Unterstützung bei der
@@ -167,18 +172,16 @@ class Helper
      * Sie dient zum Dekodieren des ITU AIS Payloads.
      *
      * @param string $aisdata168 Die AIS-Daten, die dekodiert werden sollen.
-     * @param mixed $aux Zusätzliche Parameter oder Daten, die für das Dekodieren verwendet werden können.
      * @return void Diese Funktion gibt kein explizites Ergebnis zurück.
      */
-    function decodeAIS($aisdata168, $aux) {}
+    function decodeAIS($aisdata168) {}
 
     /**
      * Verarbeitet ITU-Daten im AIS-Format und ruft die Dekodierungsfunktion auf.
      *
      * @param string $itu - ITU-Daten im AIS-Format (ASCII)
-     * @param mixed $aux - Zusätzliche Parameter (optional)
      */
-    function processAisItu($itu, $aux) {
+    function processAisItu($itu) {
         $aisData168 = ''; // Sechs-Bit-Array von ASCII-Zeichen
 
         $aisNmeaArray = str_split($itu); // In ein Array konvertieren
@@ -189,7 +192,7 @@ class Helper
             $aisData168 .= $sixBitValue; // An das 6-Bit-Array anhängen
         }
 
-        $this->decodeAIS($aisData168, $aux); // Dekodierung der AIS-Daten aufrufen
+        $this->decodeAIS($aisData168); // Dekodierung der AIS-Daten aufrufen
     }
 
 
@@ -197,10 +200,9 @@ class Helper
      * Verarbeitet rohe AIS-Rohdaten und dekodiert sie.
      *
      * @param string $rawdata - Rohe AIS-Rohdaten ohne Zeilenumbruch
-     * @param string $aux - Zusätzliche Parameter (optional)
      * @return int - Rückgabewert, -1 bei Fehler
      */
-    public function processAisRaw($rawdata, $aux = '')
+    public function processAisRaw($rawdata)
     {
         static $numSequences, $sequenceNumber,$previousSequenceNumber; // Variablen für Sequenzen
         static $messageSid = -1, $currentMessageSid; // Variablen für Nachrichten-ID
@@ -245,7 +247,6 @@ class Helper
             else { // Sequenzierung ist in Ordnung, Behandlung von Einzel- und Mehrteilnachrichten
                 if ($sequenceNumber == 1) {
                     // Initialisierung für die erste Sequenz
-                    $fillerBits = 0;
                     $ituBuffer = "";
                     $previousSequenceNumber = 0;
                     $currentMessageSid = $messageSid;
@@ -266,16 +267,17 @@ class Helper
 
                 // Hinzufügen der ITU-Nachricht und Extrahieren der Füllbits
                 $ituBuffer .= $rawDataArray[5];
-                $fillerBits += (int) $rawDataArray[6][0];
 
                 // Verarbeiten der Nachricht, abhängig von der Sequenz
                 if ($numSequences == 1 || $numSequences == $previousSequenceNumber) {
-                    return $this->processAisItu($ituBuffer, strlen($ituBuffer), $fillerBits, $aux);
+                    return $this->processAisItu($ituBuffer);
                 }
             }
         }
         return -1; // Fehler, wenn die Prüfsumme nicht übereinstimmt
     }
+
+
 
 
 
@@ -298,7 +300,7 @@ class Helper
                 $messageSegment = substr($currentBuffer, $start - 3, ($end - $start + 3));
 
                 // Verarbeitung des Nachrichtensegments mit der Funktion "process_ais_raw"
-                $this->processAisRaw($messageSegment, "");
+                $this->processAisRaw($messageSegment);
 
                 // Aktualisieren der letzten Position im Puffer
                 $lastPosition = $end + 1;

@@ -18,12 +18,12 @@ class DecoderTest extends TestCase
         // Beispiel AIS-Nachricht für Nachrichtentyp 1 (angenommen, dies ist gültige AIS-Nachricht)
         $aisdata168 = "000001000100101101010111011100001010010000000000000000000000110111001000110111100001101000011100011101110010011111101011110000110101010111010000000000001000011000011011";
         // Rufe die decodeAIS-Funktion auf
-        $result = $decoder->decodeAIS($aisdata168, $aux);
+        $result = $decoder->decodeAIS($aisdata168);
 
         // Erwartete Ausgabe (dies hängt von der Implementierung der DecoderClass ab)
         $expectedResult = new Message();
         $expectedResult->timestamp = time();
-        $expectedResult->id = 1;
+        $expectedResult->messageType = 1;
         $expectedResult->mmsi = 316005417;
         $expectedResult->courseOverGround = 301.1; // Angenommen, dies ist der erwartete Wert
         $expectedResult->speedOverGround = 0; // Angenommen, dies ist der erwartete Wert
