@@ -1,4 +1,5 @@
 <?php
+namespace Ais;
 class DataFetcher {
     private $ip;
     private $port;
@@ -19,8 +20,7 @@ class DataFetcher {
             throw new Exception("socket_connect() failed: reason: " . socket_strerror(socket_last_error($sock)));
         }
 
-        while (true) {
-            $buffer = socket_read($sock, 1024, PHP_NORMAL_READ);
+        while ($buffer = socket_read($sock, 1024, PHP_NORMAL_READ)) {
 
             if ($buffer === false) {
                 $socketError = socket_last_error($sock);
@@ -40,19 +40,17 @@ class DataFetcher {
                 echo "Verbindung geschlossen.\n";
                 break;
             }
+            $data .=$buffer;
 
-            // Verarbeiten Sie die empfangenen Daten hier, z.B. dekodieren oder anzeigen
-//            echo "Empfangene Daten: " . $buffer . "\n";
+           echo "Empfangene Daten: " . $buffer . "\n";
         }
-
-
         return $data;
     }
 }
 
 //// Verwendung der SocketClient-Klasse
 //$ip = '127.0.0.1'; // IP-Adresse des Servers
-//$port = 10000;    // Port des Servers
+//$port = 10000;  // Port des Servers
 //
 //$client = new DataFetcher($ip, $port);
 //

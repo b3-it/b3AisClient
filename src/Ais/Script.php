@@ -1,31 +1,29 @@
 <?php
-// Inkludieren Sie die SocketClient-Klasse
-use Ais\Decoder;
+namespace Ais;
 
-require 'DataFetcher.php'; // Stellen Sie sicher, dass der Dateiname korrekt ist
+require 'DataFetcher.php';
 require 'Decoder.php';
 // IP-Adresse und Port des Servers
-$ip = '127.0.0.1'; // Passen Sie dies an die tatsächlichen Serverdetails an
-$port = 10000;    // Passen Sie dies an die tatsächlichen Serverdetails an
+$ip = '127.0.0.1';
+$port = 10000;
 
-// Erstellen Sie eine Instanz der SocketClient-Klasse
 $client = new DataFetcher($ip, $port);
 $decoder = new Decoder();
 try {
     // Verbindung zum Server herstellen und Daten abrufen
     $receivedData = $client->connectAndFetchData();
 
-    // Teilen Sie die empfangenen Daten in Zeilen auf
+    // Die empfangenen Daten in Zeilen aufteilen
     $dataLines = explode("\n", $receivedData);
+//    print_r($dataLines);
 
-    // Dekodieren und ausgeben jeder Zeile
+      //Dekodieren und ausgeben jeder Zeile
     foreach ($dataLines as $line) {
-        // Überspringen Sie leere Zeilen
+        $line = trim($line)."\r\n";
+//         leere Zeilen überspringen
         if (trim($line) === '') {
             continue;
         }
-
-        // Dekodieren Sie die Zeile, falls erforderlich
         $decoder->process_ais_buf($line);
 
         // Ausgabe der dekodierten Zeile auf der Kommandozeile

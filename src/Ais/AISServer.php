@@ -29,7 +29,7 @@ do {
         break;
     }
     /* Send instructions. */
-    $msg = 		
+    $msg =
 	"!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\n" .
 	"!AIVDM,1,1,,B,13eK4H01B7PPVj4OD@seDrWb84hD,0*77\n" .
 	"!AIVDM,1,1,,A,E>j9driW9WhH@860b37a6P00000@ATmQ?Tnh800000sh20,4*56\n" .
@@ -40,6 +40,7 @@ do {
 	"!AIVDM,1,1,,B,33b51:700KPLc8FN`Rt:98Ah00ri,0*05\n" .
 	"!AIVDM,1,1,,B,139NVn?P00PcVVDNcqi8BOwf28Pn,0*55\n" .
 	"!AIVDM,1,1,,A,33@Tt2001<PW@J4N`R1b087d00vP,0*12\n" ;
+
 		
     socket_write($msgsock, $msg, strlen($msg));
     socket_close($msgsock);
