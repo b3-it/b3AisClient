@@ -1,5 +1,7 @@
 <?php
 namespace Ais;
+
+// Die DataFetcher-Klasse ermöglicht die Verbindung zum Server und das Abrufen von AIS-Daten.
 class DataFetcher {
     private $ip;
     private $port;
@@ -16,16 +18,22 @@ class DataFetcher {
             throw new Exception("socket_create() failed: reason: " . socket_strerror(socket_last_error()));
         }
 
+        if(! socket_set_option($sock,SOL_SOCKET, SO_RCVTIMEO, array("sec"=>5, "usec"=>0))){
+            throw new Exception("socket_set_option() failed: reason: " . socket_strerror(socket_last_error()));
+        }
+
         if (socket_connect($sock, $this->ip, $this->port) === false) {
             throw new Exception("socket_connect() failed: reason: " . socket_strerror(socket_last_error($sock)));
         }
 
-        while ($buffer = socket_read($sock, 1024, PHP_NORMAL_READ)) {
-
+        $n = 0;
+        $data = [];
+        while (($buffer = socket_read($sock, 1024, PHP_NORMAL_READ)) && ($n < 50 )) {
+            $n++;
             if ($buffer === false) {
                 $socketError = socket_last_error($sock);
 
-                // Überprüfen, ob die Verbindung bewusst beendet wurde
+                // Überprüfen, ob die Verbindung bewusst beendet wurde.
                 if ($socketError === SOCKET_ECONNRESET) {
                     echo "Verbindung zurückgesetzt.\n";
                 } else {
@@ -35,31 +43,26 @@ class DataFetcher {
                 break;
             }
 
-            if ($buffer === '') {
+
+            if (empty($buffer)) {
                 // Wenn $buffer leer ist, bedeutet dies, dass die Verbindung geschlossen wurde.
                 echo "Verbindung geschlossen.\n";
                 break;
             }
-            $data .=$buffer;
 
-           echo "Empfangene Daten: " . $buffer . "\n";
+            $buffer = str_replace(["\r","\n"],'',$buffer);
+            if (!empty($buffer)) {
+
+                $data[] = $buffer;
+            }
+
+//            $data .=$buffer;
+            echo "<pre>";
+            echo "Empfangene Daten: " . $buffer . "\r\n";
+
         }
         return $data;
     }
 }
-
-//// Verwendung der SocketClient-Klasse
-//$ip = '127.0.0.1'; // IP-Adresse des Servers
-//$port = 10000;  // Port des Servers
-//
-//$client = new DataFetcher($ip, $port);
-//
-//try {
-//    $receivedData = $client->connectAndFetchData();
-//    echo "Empfangene Daten:\n" . $receivedData;
-//} catch (Exception $e) {
-//    echo "Fehler beim Verbinden und Empfangen von Daten: " . $e->getMessage();
-//}
-
 
 ?>

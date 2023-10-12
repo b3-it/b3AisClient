@@ -66,7 +66,7 @@ class Decoder extends Helper
         }
 
         // Ausgabe des decodierten Nachrichtenobjekts für Debugging-Zwecke
-        var_dump($message);
+        //var_dump($message);
         return $message;
     }
 
