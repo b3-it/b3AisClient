@@ -18,7 +18,6 @@ class Helper
 {
 
 
-
     /**
      * Konvertiert einen gegebenen Wert in eine Breitengrad-Koordinate.
      *
@@ -197,7 +196,9 @@ class Helper
 
 
     /**
-     * Verarbeitet rohe AIS-Rohdaten und dekodiert sie.
+     * Die Funktion ist entscheidend für die Verarbeitung von AIS-Nachrichten und stellt sicher,
+     * dass die empfangenen Daten gültig und vollständig sind, bevor sie zur eigentlichen Verarbeitung
+     * weitergegeben werden.
      *
      * @param string $rawdata - Rohe AIS-Rohdaten ohne Zeilenumbruch
      * @return int - Rückgabewert, -1 bei Fehler
