@@ -148,14 +148,14 @@ class Decoder extends Helper
 }
 
 
-//$decoder = new Decoder();
-//if (1) {
-//    $buf = "!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\r\n";
-//    // Important Note:
-//    // After receiving input from incoming serial or TCP/IP, call the process_ais_buf(...) method and pass in
-//    // the input from device for further processing.
-//    $decoder->process_ais_buf($buf);
-//}
+$decoder = new Decoder();
+if (1) {
+    $buf = "!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\r\n";
+    // Important Note:
+    // After receiving input from incoming serial or TCP/IP, call the process_ais_buf(...) method and pass in
+    // the input from device for further processing.
+    $decoder->process_ais_buf($buf);
+}
 
 
 //$decoder->doSomethingWithHttp();

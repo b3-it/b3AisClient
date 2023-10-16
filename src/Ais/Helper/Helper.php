@@ -284,7 +284,7 @@ class Helper
 
     /**
      * Verarbeitet die empfangenen Daten aus der seriellen oder IP-Kommunikation.
-     *
+     * Entfernt \r\n aus "!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\r\n"
      * @param string $incomingBuffer Die empfangenen Daten, die dem Puffer hinzugefügt werden sollen.
      * @return void
      */
@@ -300,7 +300,7 @@ class Helper
                 // Extrahieren des Nachrichtensegments aus dem Puffer
                 $messageSegment = substr($currentBuffer, $start - 3, ($end - $start + 3));
 
-                // Verarbeitung des Nachrichtensegments mit der Funktion "process_ais_raw"
+
                 $this->processAisRaw($messageSegment);
 
                 // Aktualisieren der letzten Position im Puffer

@@ -1,7 +1,6 @@
 <?php
 namespace Ais;
 
-
 require 'Decoder.php';
 
 // Die DataFetcher-Klasse ermöglicht die Verbindung zum Server und das Abrufen von AIS-Daten.
@@ -17,19 +16,22 @@ class DataFetcher {
     public function fetchData() {
 
         $sock = $this->connect();
-
-        $n = 0;
         $data = [];
-        while (($buffer = socket_read($sock, 1024, PHP_NORMAL_READ)) && ($n < 50 )) {
-            $n++;
+        $starttime = time();
+        $endTime = $starttime + 30;
+
+        while (true) {
+
+            $buffer = socket_read($sock, 1024, PHP_NORMAL_READ);
+
             if ($buffer === false) {
                 $socketError = socket_last_error($sock);
 
                 // Überprüfen, ob die Verbindung bewusst beendet wurde.
                 if ($socketError === SOCKET_ECONNRESET) {
-                    echo "Verbindung zurückgesetzt.\n";
+                    echo "Verbindung zurückgesetzt." . '<br>';
                 } else {
-                    echo "Fehler beim Lesen vom Socket: " . socket_strerror($socketError) . "\n";
+                    echo "Fehler beim Lesen vom Socket: " . socket_strerror($socketError) . '<br>';
                 }
 
                 break;
@@ -37,18 +39,22 @@ class DataFetcher {
 
             if (empty($buffer)) {
                 // Wenn $buffer leer ist, bedeutet dies, dass die Verbindung geschlossen wurde.
-                echo "Verbindung geschlossen.\n";
+                echo "Verbindung geschlossen" . '<br>';
                 break;
             }
 
             $buffer = str_replace(["\r","\n"],'',$buffer);
-            if (!empty($buffer)) {
 
+            if (!empty($buffer)) {
                 $data[] = $buffer;
             }
 
             echo "<pre>";
             echo "Empfangene Daten: " . $buffer . "\r\n";
+
+            if (time() > $endTime) {
+                break;
+            }
 
         }
         return $data;
@@ -77,7 +83,10 @@ class DataFetcher {
 
         $decoder = new Decoder();
         $messageBuffer = '';
-        $old = [];
+        $uniqueMMSI = [];
+        $lockEntryInProgress = false; // Variable, um den Einfahrvorgang in die Schleuse zu überwachen
+        $lockEntryStartTime = null; // Zeitpunkt des Einfahrvorgangs
+        $lockMMSI = null; // MMSI des Schiffs im Einfahrvorgang
 
         foreach ($receivedData as $line) {
             $line = trim ($line) . "\r\n";
@@ -87,19 +96,43 @@ class DataFetcher {
             }
 
             $messageBuffer .= $line;
-
-            $data = $decoder->process_ais_buf($messageBuffer);
+            $decodedData = $decoder->process_ais_buf($messageBuffer);
             $messageBuffer = '';
-            var_dump($data);
+            var_dump($decodedData);
+            $mmsi = $decodedData->mmsi;
 
-            $mmsi = $data->mmsi;
-            if (isset($old[$mmsi])) {
-                echo "Found " . $mmsi . '<br>';
+            if (isset($uniqueMMSI[$mmsi])) {
+                echo "Doppelte MMSI gefunden: " . $mmsi . '<br>';
             } else {
-                $old[$mmsi] = $data;
+                $uniqueMMSI[$mmsi] = $decodedData;
             }
 
+            if (!$lockEntryInProgress && $decodedData->speedOverGround > 0) {
+                // Das Schiff ist in Bewegung, und der Einfahrvorgang hat begonnen
+                $lockEntryInProgress = true;
+                $lockEntryStartTime = time();
+                $lockMMSI = $mmsi;
+            }
+
+            if ($lockEntryInProgress && $mmsi === $lockMMSI) {
+                // Überwachen, ob das Schiff MMSI alle 10 Sekunden sendet
+                $currentTime = time();
+                if ($currentTime - $lockEntryStartTime >= 10) {
+                    // Das Schiff hat erfolgreich MMSI gesendet
+                    echo "Schiff $lockMMSI ist in die Schleuse eingefahren " .'<br>';
+                    $lockEntryInProgress = false;
+                    $lockEntryStartTime = null;
+                    $lockMMSI = null;
+                }
+            }
+
+
+
         }
+
+
+
+
     }
 }
 
