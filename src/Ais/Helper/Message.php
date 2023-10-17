@@ -12,16 +12,27 @@ namespace Ais\Helper;
  * oder unbekannten Informationen abzudecken. Diese Klasse wird verwendet, um Nachrichtenobjekte
  * zu erstellen und die darin enthaltenen AIS-Daten zu organisieren.
  */
-class Message
+class Message extends Helper
 {
-    public $class = 0;                // Indikator für nicht dekodierte Nachricht, AIS-Klasse nicht definiert
-    public $name = '';                // Name des Schiffs oder der Einrichtung
-    public $speedOverGround = -1.0;   // Standardwert für unbekannte Geschwindigkeit
-    public $courseOverGround = 0.0;   // Standardwert für unbekannten Kurs
-    public $longitude = 0.0;          // Standardwert für Längengrad
-    public $latitude = 0.0;           // Standardwert für Breitengrad
 
-    public $timestamp;                // Zeitstempel der Nachricht
-    public $messageType;                       // ID des Nachrichtentyps
-    public $mmsi;                     // Maritime Mobile Service Identity (MMSI) des Senders
+    protected $channel = 0;                // Indikator für nicht dekodierte Nachricht, AIS-Klasse nicht definiert
+    protected $name = '';                // Name des Schiffs oder der Einrichtung
+    protected $speedOverGround = -1.0;   // Standardwert für unbekannte Geschwindigkeit
+    protected $courseOverGround = 0.0;   // Standardwert für unbekannten Kurs
+    protected $longitude = 0.0;          // Standardwert für Längengrad
+    protected $latitude = 0.0;           // Standardwert für Breitengrad
+
+    protected $timestamp;                // Zeitstempel der Nachricht
+    protected $messageType;              // ID des Nachrichtentyps
+    protected $mmsi;                     // Maritime Mobile Service Identity (MMSI) des Senders
+
+    protected $destinaton;
+
+    public function __construct($messageType)
+    {
+        $this->messageType = $messageType;
+    }
+
+    public function decode($aisdata168)
+    {}
 }

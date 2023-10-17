@@ -176,7 +176,8 @@ class Helper
     function decodeAIS($aisdata168) {}
 
     /**
-     * Verarbeitet ITU-Daten im AIS-Format und ruft die Dekodierungsfunktion auf.
+     * Diese Funktion konvertiert eine AIS-Nachricht im ITU-1371-Format in das AIS-Datenformat,
+     * das zur weiteren Dekodierung verwendet wird.
      *
      * @param string $itu - ITU-Daten im AIS-Format (ASCII)
      */

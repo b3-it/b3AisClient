@@ -126,7 +126,7 @@ class DataFetcher {
                 }
             }
 
-
+        //TODO: zusammenfügen von nachrichten aus mehreren segmenten
 
         }
 
