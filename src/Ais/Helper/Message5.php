@@ -21,7 +21,19 @@ class Message5 extends Message
         $this->name = $this->convertBinaryToAISChars($aisdata168, 112, 120);
         $this->destinaton = $this->convertBinaryToAISChars($aisdata168, 302, 120);
         $this->channel = "A"; // Class A
+        $this->printObject();
+    }
 
+    function printObject()
+    {
+        $output =   "Object ID: " . spl_object_id($this). '<br>'.
+                    "Message type: " .$this->messageType. '<br>' .
+                    "MMSI: " .$this->mmsi. '<br>' .
+                    "Name: " .$this->name. '<br>' .
+                    "Destination: " .$this->destinaton. '<br>' .
+                    "Channel: " .$this->channel. '<br>' ;
+
+        echo $output;
     }
 
 }

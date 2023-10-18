@@ -33,6 +33,7 @@ class Message extends Helper
         $this->messageType = $messageType;
     }
 
-    public function decode($aisdata168)
+    protected function decode($aisdata168)
     {}
+    protected function printObject(){}
 }

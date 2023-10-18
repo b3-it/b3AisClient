@@ -29,4 +29,20 @@ class Message123 extends Message
         $this->channel = "A"; // Class A
     }
 
+    function printObject()
+    {
+        $output =   "Object ID: " . spl_object_id($this). '<br>'.
+                    "Message type: " .$this->messageType. '<br>'.
+                    "MMSI: " .$this->mmsi. '<br>' .
+                    "Speed over Ground: " .$this->speedOverGround. '<br>' .
+                    "Longitude: " .$this->longitude. '<br>' .
+                    "Latitude: " .$this->latitude. '<br>' .
+                    "Course over Ground: " .$this->courseOverGround. '<br>' .
+                    "Timestamp:  " .$this->timestamp. '<br>' .
+                    "Channel: " .$this->channel. '<br>' ;
+
+
+        echo $output;
+    }
+
 }

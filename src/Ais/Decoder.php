@@ -65,6 +65,7 @@ class Decoder extends Helper
                 break;
         }
         $message->decode($aisdata168);
+        $message->printObject();
 
 //        // Klassifizieren der Nachricht anhand der ID
 //        if ($message->messageType >= 1 && $message->messageType <= 3) {
@@ -81,9 +82,6 @@ class Decoder extends Helper
 //        }
 
         // Ausgabe des decodierten Nachrichtenobjekts für Debugging-Zwecke
-        var_dump($message);
-
-        //TODO: print only necessary information
 
         return $message;
     }

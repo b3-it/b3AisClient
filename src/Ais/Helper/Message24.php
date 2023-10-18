@@ -28,4 +28,16 @@ class Message24 extends Message
 
         }
     }
+
+    function printObject()
+    {
+        $output =   "Object ID: " . spl_object_id($this). '<br>'.
+                    "Message type: " .$this->messageType. '<br>'.
+                    "MMSI: " .$this->mmsi. '<br>' .
+                    "Name:  " .$this->name. '<br>' .
+                    "Channel: " .$this->channel. '<br>' .
+                    "Message type: " .$this->messageType. '<br>';
+
+        echo $output;
+    }
 }
