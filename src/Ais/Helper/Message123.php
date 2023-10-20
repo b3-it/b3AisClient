@@ -31,9 +31,8 @@ class Message123 extends Message
 
     function printObject()
     {
-        $output =   '<br>'. "Object ID: " . spl_object_id($this). '<br>'.
+        $output =   '<br>'. "MMSI: " .$this->mmsi. '<br>' .
                     "Message type: " .$this->messageType. '<br>'.
-                    "MMSI: " .$this->mmsi. '<br>' .
                     "Speed over Ground: " .$this->speedOverGround. '<br>' .
                     "Longitude: " .$this->longitude. '<br>' .
                     "Latitude: " .$this->latitude. '<br>' .

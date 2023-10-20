@@ -37,7 +37,7 @@ class Decoder extends Helper
      * Decodiert AIS-Daten und erstellt ein Nachrichtenobjekt.
      *
      * @param string $aisdata168 - Die AIS-Rohdaten (168 Bit).
-     *
+     * @param string $channel
      * @return Message - Ein Nachrichtenobjekt mit den decodierten Informationen.
      */
     public function decodeAIS($aisdata168, $channel)
@@ -67,22 +67,6 @@ class Decoder extends Helper
         $message->decode($aisdata168, $messageChannel);
         $message->printObject();
 
-//        // Klassifizieren der Nachricht anhand der ID
-//        if ($message->messageType >= 1 && $message->messageType <= 3) {
-//            $this->decodeType123Message($message, $aisdata168);
-//        } elseif ($message->messageType == 5) {
-//            $this->decodeType5Message($message, $aisdata168);
-//        } elseif ($message->messageType == 18) {
-//            $this->decodeType18Message($message, $aisdata168);
-//        }elseif ($message->messageType == 19){
-//            $this->decodeType19Message($message, $aisdata168);
-//        }
-//        elseif ($message->messageType == 24) {
-//            $this->decodeType24Message($message, $aisdata168);
-//        }
-
-        // Ausgabe des decodierten Nachrichtenobjekts für Debugging-Zwecke
-
         return $message;
     }
 
@@ -103,8 +87,12 @@ $decoder = new Decoder();
 
 if (1) {
     $test2_a = array(
+        "!AIVDM,2,1,0,B,539S:k40000000c3G04PPh63<00000000080000o1PVG2uGD:00000000000,0*34\r\n",
+        "!AIVDM,2,2,0,B,00000000000,2*27\r\n",
         "!AIVDM,2,1,8,A,55RiwV02>3bLS=HJ220t<D4r0<u84j222222221?=PD?55Pf0BTjCQhD,0*73\r\n",
-        "!AIVDM,2,2,8,A,3lQH88888888880,2*6A\r\n"
+        "!AIVDM,2,2,8,A,3lQH88888888880,2*6A\r\n",
+        "!AIVDM,2,1,0,B,C8u:8C@t7@TnGCKfm6Po`e6N`:Va0L2J;06HV50JV?SjBPL3,0*28\r\n",
+        "!AIVDM,2,2,0,B,11RP,0*17\r\n"
     );
     foreach ($test2_a as $test2_1) {
         // Important Note:

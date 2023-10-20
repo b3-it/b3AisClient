@@ -26,14 +26,12 @@ class Message5 extends Message
         $this->ETAminute = bindec(substr($aisdata168, 288, 6));
         $this->destinaton = $this->convertBinaryToAISChars($aisdata168, 302, 120);
         $this->channel = $messageChannel;
-        $this->printObject();
     }
 
     function printObject()
     {
-        $output =   '<br>'. "Object ID: " . spl_object_id($this). '<br>'.
+        $output =   '<br>'. "MMSI: " .$this->mmsi. '<br>' .
                     "Message type: " .$this->messageType. '<br>' .
-                    "MMSI: " .$this->mmsi. '<br>' .
                     "Name: " .$this->name. '<br>' .
                     "Ship type: " .$this->shipType . '<br>'.
                     "ETA month (UTC): ". $this->ETAmonth . '<br>' .

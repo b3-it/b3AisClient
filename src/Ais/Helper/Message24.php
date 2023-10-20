@@ -33,9 +33,8 @@ class Message24 extends Message
 
     function printObject()
     {
-        $output =   '<br>'. "Object ID: " . spl_object_id($this). '<br>'.
+        $output =   '<br>'. "MMSI: " .$this->mmsi. '<br>' .
                     "Message type: " .$this->messageType. '<br>'.
-                    "MMSI: " .$this->mmsi. '<br>' .
                     "Name:  " .$this->name. '<br>' .
                     "Ship type" . $this->shipType . '<br>' .
                     "Channel: " .$this->channel. '<br>' .
