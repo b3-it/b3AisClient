@@ -173,18 +173,19 @@ class Helper
      * @param string $aisdata168 Die AIS-Daten, die dekodiert werden sollen.
      * @return void Diese Funktion gibt kein explizites Ergebnis zurück.
      */
-    function decodeAIS($aisdata168) {}
+    function decodeAIS($aisdata168, $channel) {}
 
     /**
      * Diese Funktion konvertiert eine AIS-Nachricht im ITU-1371-Format in das AIS-Datenformat,
      * das zur weiteren Dekodierung verwendet wird.
      *
      * @param string $itu - ITU-Daten im AIS-Format (ASCII)
+     * @param $messageChannel
      */
-    function processAisItu($itu) {
+    function processAisItu($itu, $messageChannel) {
         $aisData168 = ''; // Sechs-Bit-Array von ASCII-Zeichen
-
         $aisNmeaArray = str_split($itu); // In ein Array konvertieren
+        $channel = $messageChannel;
         foreach ($aisNmeaArray as $value) {
             $decimalValue = $this->convertAsciiToDecimal($value); // ASCII zu Dezimal konvertieren
             $eightBitValue = $this->convertAsciiTo8Bit($decimalValue); // Dezimal zu 8-Bit umwandeln
@@ -192,7 +193,7 @@ class Helper
             $aisData168 .= $sixBitValue; // An das 6-Bit-Array anhängen
         }
 
-        $this->decodeAIS($aisData168); // Dekodierung der AIS-Daten aufrufen
+        $this->decodeAIS($aisData168, $channel); // Dekodierung der AIS-Daten aufrufen
     }
 
 
@@ -206,10 +207,9 @@ class Helper
      */
     public function processAisRaw($rawdata)
     {
-        static $numSequences, $sequenceNumber,$previousSequenceNumber; // Variablen für Sequenzen
+        static $numSequences, $sequenceNumber,$previousSequenceNumber; // Variablen für Sequenzen (1-9)
         static $messageSid = -1, $currentMessageSid; // Variablen für Nachrichten-ID
         static $ituBuffer; // Puffer für ITU-Nachricht
-        $fillerBits = 0; // Anzahl der Füllbits (int)
         $checksum = 0; // Initialisierung der Prüfsumme
 
         // Berechnung der Checksumme von '!' bis '*'
@@ -233,6 +233,7 @@ class Helper
 
             // Extrahieren der Nachrichten-ID, Prüfen auf leere Nachrichten-ID
             $messageSid = ($rawDataArray[3] == '') ? -1 : (int)$rawDataArray[3];
+            $messageChannel = $rawDataArray[4];
 
             if ($numSequences < 1 || $numSequences > 9) {
                 echo "ERROR,INVALID_NUMBER_OF_SEQUENCES ".time()." $rawdata\n";
@@ -272,7 +273,7 @@ class Helper
 
                 // Verarbeiten der Nachricht, abhängig von der Sequenz
                 if ($numSequences == 1 || $numSequences == $previousSequenceNumber) {
-                    return $this->processAisItu($ituBuffer);
+                    return $this->processAisItu($ituBuffer, $messageChannel);
                 }
             }
         }

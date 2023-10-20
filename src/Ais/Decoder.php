@@ -40,11 +40,11 @@ class Decoder extends Helper
      *
      * @return Message - Ein Nachrichtenobjekt mit den decodierten Informationen.
      */
-    public function decodeAIS($aisdata168)
+    public function decodeAIS($aisdata168, $channel)
     {
 
         $messageType = bindec(substr($aisdata168, 0, 6));
-
+        $messageChannel = $channel;
         switch ($messageType) {
             case 1:
             case 2:
@@ -64,7 +64,7 @@ class Decoder extends Helper
                 $message = new Message24($messageType);
                 break;
         }
-        $message->decode($aisdata168);
+        $message->decode($aisdata168, $messageChannel);
         $message->printObject();
 
 //        // Klassifizieren der Nachricht anhand der ID
@@ -86,33 +86,30 @@ class Decoder extends Helper
         return $message;
     }
 
-
-
-
-
 }
 
 
 $decoder = new Decoder();
-if (1) {
-    $buf = "!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\r\n";
-    // Important Note:
-    // After receiving input from incoming serial or TCP/IP, call the process_ais_buf(...) method and pass in
-    // the input from device for further processing.
-    $decoder->process_ais_buf($buf);
-}
-
-
-
 //if (1) {
-//    $test2_a = array(
-//        "!AIVDM,2,1,8,A,55RiwV02>3bLS=HJ220t<D4r0<u84j222222221?=PD?55Pf0BTjCQhD,0*73\r\n",
-//        "!AIVDM,2,2,8,A,3lQH88888888880,2*6A\r\n"
-//    );
-//    foreach ($test2_a as $test2_1) {
-//        // Important Note:
-//        // After receiving input from incoming serial or TCP/IP, call the process_ais_buf(...) method and pass in
-//        // the input from device for further processing.
-//        $decoder->process_ais_buf($test2_1);
-//    }
+//    $buf = "!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\r\n";
+//
+//    // Important Note:
+//    // After receiving input from incoming serial or TCP/IP, call the process_ais_buf(...) method and pass in
+//    // the input from device for further processing.
+//    $decoder->process_ais_buf($buf);
 //}
+
+
+
+if (1) {
+    $test2_a = array(
+        "!AIVDM,2,1,8,A,55RiwV02>3bLS=HJ220t<D4r0<u84j222222221?=PD?55Pf0BTjCQhD,0*73\r\n",
+        "!AIVDM,2,2,8,A,3lQH88888888880,2*6A\r\n"
+    );
+    foreach ($test2_a as $test2_1) {
+        // Important Note:
+        // After receiving input from incoming serial or TCP/IP, call the process_ais_buf(...) method and pass in
+        // the input from device for further processing.
+        $decoder->process_ais_buf($test2_1);
+    }
+}

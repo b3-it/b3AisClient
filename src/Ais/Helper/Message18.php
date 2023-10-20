@@ -13,10 +13,10 @@ class Message18 extends Message
     /**
      * Decodiert eine AIS-Nachricht vom Typ 18.
      *
-     * @param Message $message - Das Nachrichtenobjekt, das aktualisiert wird.
+     * @param $messageChannel
      * @param string $aisdata168 - Die AIS-Rohdaten (168 Bit).
      */
-    public function decode($aisdata168)
+    public function decode($aisdata168, $messageChannel)
     {
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
         $this->courseOverGround = bindec(substr($aisdata168, 112, 12)) / 10;
@@ -24,12 +24,12 @@ class Message18 extends Message
         $this->longitude = $this->convertToLongitude(bindec(substr($aisdata168, 57, 28)));
         $this->latitude = $this->convertToLatitude(bindec(substr($aisdata168, 85, 27)));
         $this->timestamp = bindec(substr($aisdata168, 133, 6));
-        $this->channel = "B"; // Class B
+        $this->channel = $messageChannel;
     }
 
     function printObject()
     {
-        $output =   "Object ID: " . spl_object_id($this). '<br>'.
+        $output =   '<br>'. "Object ID: " . spl_object_id($this). '<br>'.
                     "Message type: " .$this->messageType. '<br>'.
                     "MMSI: " .$this->mmsi. '<br>' .
                     "Speed over Ground: " .$this->speedOverGround. '<br>' .

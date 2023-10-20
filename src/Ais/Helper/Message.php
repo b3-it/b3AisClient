@@ -28,12 +28,18 @@ class Message extends Helper
 
     protected $destinaton;
 
+    protected $shipType;
+    protected $ETAmonth;
+    protected $ETAday;
+    protected $ETAhour;
+    protected $ETAminute;
+
     public function __construct($messageType)
     {
         $this->messageType = $messageType;
     }
 
-    protected function decode($aisdata168)
+    protected function decode($aisdata168, $messageChannel)
     {}
     protected function printObject(){}
 }
