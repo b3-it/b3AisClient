@@ -2,12 +2,31 @@
 
 namespace Ais\Helper;
 
+use Ais\Helper\Message;
+use Ais\Helper\Message123;
+use Ais\Helper\Message18;
+use Ais\Helper\Message19;
+use Ais\Helper\Message24;
+use Ais\Helper\Message5;
+
+
+
+require_once('Message.php');
+require_once('Message123.php');
+require_once('Message5.php');
+require_once('Message18.php');
+require_once('Message19.php');
+require_once('Message24.php');
+
+
 define('ERROR_MISSING_ASTERISK', -1);
 define('ERROR_INVALID_CHECKSUM_LENGTH', -2);
 define('ERROR_INVALID_NUMBER_OF_SEQUENCES', -3);
 define('ERROR_INVALID_SEQUENCE_NUMBER', -4);
 define('ERROR_INVALID_SEQUENCE_ORDER', -5);
 define('ERROR_INVALID_MULTIPART_MESSAGE', -6);
+
+
 /**
  * Die Klasse Helper enthält eine Sammlung von Hilfsfunktionen, die zur Dekodierung von AIS-Nachrichten
  * und zur Verarbeitung von Rohdaten verwendet werden. Diese Funktionen bieten Unterstützung bei der
@@ -17,6 +36,13 @@ define('ERROR_INVALID_MULTIPART_MESSAGE', -6);
 class Helper
 {
 
+    public $_resultBuffer;
+
+
+//    public function __get($name)
+//    {
+//        return $this->$name;
+//    }
 
     /**
      * Konvertiert einen gegebenen Wert in eine Breitengrad-Koordinate.
@@ -72,8 +98,8 @@ class Helper
      * @return int - Der resultierende Dezimalwert des ASCII-Zeichens.
      */
     function convertAsciiToDecimal($char) {
-        $decimalValue = ord($char); // Konvertiert das ASCII-Zeichen in einen Dezimalwert
-        return $decimalValue;
+        // Konvertiert das ASCII-Zeichen in einen Dezimalwert
+        return ord($char);
     }
 
 
@@ -167,13 +193,41 @@ class Helper
 
 
     /**
-     * Diese Funktion kann überschrieben werden.
+     *
      * Sie dient zum Dekodieren des ITU AIS Payloads.
      *
      * @param string $aisdata168 Die AIS-Daten, die dekodiert werden sollen.
-     * @return void Diese Funktion gibt kein explizites Ergebnis zurück.
+     * @param string $channel
      */
-    function decodeAIS($aisdata168, $channel) {}
+    function decodeAIS($aisdata168) {
+
+        $message = null;
+        $messageType = bindec(substr($aisdata168, 0, 6));
+        switch ($messageType) {
+            case 1:
+            case 2:
+            case 3:
+                $message = new Message123($messageType);
+                break;
+            case 5:
+                $message = new Message5($messageType);
+                break;
+            case 18:
+                $message = new Message18($messageType);
+                break;
+            case 19:
+                $message = new Message19($messageType);
+                break;
+            case 24:
+                $message = new Message24($messageType);
+                break;
+        }
+        //prüfen on message !=null
+        $this->_resultBuffer = $message->decode($aisdata168);
+        $message->printObject();
+
+        return $message;
+    }
 
     /**
      * Diese Funktion konvertiert eine AIS-Nachricht im ITU-1371-Format in das AIS-Datenformat,
@@ -182,10 +236,9 @@ class Helper
      * @param string $itu - ITU-Daten im AIS-Format (ASCII)
      * @param $messageChannel
      */
-    function processAisItu($itu, $messageChannel) {
+    function processAisItu($itu) {
         $aisData168 = ''; // Sechs-Bit-Array von ASCII-Zeichen
         $aisNmeaArray = str_split($itu); // In ein Array konvertieren
-        $channel = $messageChannel;
         foreach ($aisNmeaArray as $value) {
             $decimalValue = $this->convertAsciiToDecimal($value); // ASCII zu Dezimal konvertieren
             $eightBitValue = $this->convertAsciiTo8Bit($decimalValue); // Dezimal zu 8-Bit umwandeln
@@ -193,7 +246,7 @@ class Helper
             $aisData168 .= $sixBitValue; // An das 6-Bit-Array anhängen
         }
 
-        $this->decodeAIS($aisData168, $channel); // Dekodierung der AIS-Daten aufrufen
+        $this->decodeAIS($aisData168); // Dekodierung der AIS-Daten aufrufen
     }
 
 
@@ -233,7 +286,6 @@ class Helper
 
             // Extrahieren der Nachrichten-ID, Prüfen auf leere Nachrichten-ID
             $messageSid = ($rawDataArray[3] == '') ? -1 : (int)$rawDataArray[3];
-            $messageChannel = $rawDataArray[4];
 
             if ($numSequences < 1 || $numSequences > 9) {
                 echo "ERROR,INVALID_NUMBER_OF_SEQUENCES ".time()." $rawdata\n";
@@ -273,7 +325,7 @@ class Helper
 
                 // Verarbeiten der Nachricht, abhängig von der Sequenz
                 if ($numSequences == 1 || $numSequences == $previousSequenceNumber) {
-                    return $this->processAisItu($ituBuffer, $messageChannel);
+                    return $this->processAisItu($ituBuffer);
                 }
             }
         }
@@ -290,7 +342,7 @@ class Helper
      * @param string $incomingBuffer Die empfangenen Daten, die dem Puffer hinzugefügt werden sollen.
      * @return void
      */
-    function process_ais_buf($incomingBuffer) {
+    public function process_ais_buf($incomingBuffer) {
         static $currentBuffer = ""; // Statischer Puffer für unvollständige Nachrichten
         $currentBuffer = $currentBuffer.$incomingBuffer; // Fügt die empfangenen Daten zum aktuellen Puffer hinzu
         $lastPosition = 0; // Speichert die letzte Position, bis zu der die Daten verarbeitet wurden

@@ -15,7 +15,6 @@ namespace Ais\Helper;
 class Message extends Helper
 {
 
-    protected $channel = 0;                // Indikator für nicht dekodierte Nachricht, AIS-Klasse nicht definiert
     protected $name = '';                // Name des Schiffs oder der Einrichtung
     protected $speedOverGround = -1.0;   // Standardwert für unbekannte Geschwindigkeit
     protected $courseOverGround = 0.0;   // Standardwert für unbekannten Kurs
@@ -28,7 +27,6 @@ class Message extends Helper
 
     protected $destinaton;
 
-    protected $shipType;
     protected $ETAmonth;
     protected $ETAday;
     protected $ETAhour;
@@ -39,7 +37,8 @@ class Message extends Helper
         $this->messageType = $messageType;
     }
 
-    protected function decode($aisdata168, $messageChannel)
-    {}
+    protected function decode($aisdata168)
+    {
+    }
     protected function printObject(){}
 }

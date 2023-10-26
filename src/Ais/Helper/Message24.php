@@ -16,13 +16,12 @@ class Message24 extends Message
      * @param $messageChannel
      * @param string $aisdata168 - Die AIS-Rohdaten (168 Bit).
      */
-    public function decode($aisdata168, $messageChannel)
+    public function decode($aisdata168)
     {
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
         //        $partNumber = bindec(substr($aisdata168, 38, 2));
         $this->name = $this->convertBinaryToAISChars($aisdata168, 40, 120);
-        $this->shipType = bindec(substr($aisdata168,40,8));
-        $this->channel = $messageChannel;
+        return $this;
 
         //        if ($partNumber == 0) {
         //            $this->channel = "A"; //Class B
@@ -35,10 +34,7 @@ class Message24 extends Message
     {
         $output =   '<br>'. "MMSI: " .$this->mmsi. '<br>' .
                     "Message type: " .$this->messageType. '<br>'.
-                    "Name:  " .$this->name. '<br>' .
-                    "Ship type" . $this->shipType . '<br>' .
-                    "Channel: " .$this->channel. '<br>' .
-                    "Message type: " .$this->messageType. '<br>';
+                    "Name:  " .$this->name. '<br>' ;
 
         echo $output;
     }

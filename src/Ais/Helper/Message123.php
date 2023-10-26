@@ -17,7 +17,7 @@ class Message123 extends Message
      * @param $messageChannel
      * @param string $aisdata168 - Die AIS-Rohdaten (168 Bit).
      */
-    public function decode($aisdata168, $messageChannel)
+    public function decode($aisdata168)
     {
 
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
@@ -26,7 +26,8 @@ class Message123 extends Message
         $this->longitude = $this->convertToLongitude(bindec(substr($aisdata168, 61, 28)));
         $this->latitude = $this->convertToLatitude(bindec(substr($aisdata168, 89, 27)));
         $this->timestamp = bindec(substr($aisdata168, 137, 6));
-        $this->channel = $messageChannel;
+
+        return $this;
     }
 
     function printObject()
@@ -37,8 +38,7 @@ class Message123 extends Message
                     "Longitude: " .$this->longitude. '<br>' .
                     "Latitude: " .$this->latitude. '<br>' .
                     "Course over Ground: " .$this->courseOverGround. '<br>' .
-                    "Timestamp:  " .$this->timestamp. '<br>' .
-                    "Channel: " .$this->channel. '<br>' ;
+                    "Timestamp:  " .$this->timestamp. '<br>';
 
 
         echo $output;
