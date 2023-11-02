@@ -1,23 +1,29 @@
 <?php
 
 namespace Ais;
-use Redis;
+
+
+
 class RedisDataViewer
 {
-    private $redis;
-
     public function __construct()
     {
-        $this->redis = new Redis();
-        $this->redis->connect('localhost', 6379);
     }
 
     public function viewDataFromRedis()
     {
-        $aisData = $this->redis->lrange('ais_data', 0, -1);
+        $redis = new RedisData();
 
-        foreach ($aisData as $data) {
-            echo "AIS Data: " . $data . PHP_EOL;
+        $redis->connect();
+        $aisData = $redis->read();
+        $redis->close();
+        if (empty($aisData)) {
+            echo "Keine Daten in Redis gefunden." . PHP_EOL;
+        } else {
+            echo "AIS-Daten aus Redis:" . PHP_EOL;
+            foreach ($aisData as $data) {
+                echo $data . PHP_EOL;
+            }
         }
     }
 }

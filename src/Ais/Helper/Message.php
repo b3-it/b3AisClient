@@ -15,6 +15,7 @@ namespace Ais\Helper;
 class Message extends Helper
 {
 
+    protected $channel = 0;                // Indikator für nicht dekodierte Nachricht, AIS-Klasse nicht definiert
     protected $name = '';                // Name des Schiffs oder der Einrichtung
     protected $speedOverGround = -1.0;   // Standardwert für unbekannte Geschwindigkeit
     protected $courseOverGround = 0.0;   // Standardwert für unbekannten Kurs
@@ -38,7 +39,30 @@ class Message extends Helper
     }
 
     protected function decode($aisdata168)
-    {
-    }
+    {}
     protected function printObject(){}
+
+
+    public function getEncodeData()
+    {
+        $res = [];
+        $res['name']  = $this->name;
+        $res['speedOverGround'] =  $this->speedOverGround;
+        $res['courseOverGround']  = $this->courseOverGround ;
+        $res['longitude']  = $this->longitude;
+        $res['latitude']  = $this->latitude ;
+
+        $res['timestamp']  = $this->timestamp;
+        $res['messageType']  = $this->messageType;
+        $res['mmsi']  = $this->mmsi;
+
+        $res['destinaton']  = $this->destinaton;
+
+        $res['ETAmonth']  = $this->ETAmonth;
+        $res['ETAday']  = $this->ETAday;
+        $res['ETAhour']  = $this->ETAhour;
+        $res['ETAminute']  = $this->ETAminute;
+
+        return json_encode($res);
+    }
 }

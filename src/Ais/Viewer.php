@@ -20,23 +20,24 @@ spl_autoload_register( function ($class) {
     }
 });
 
-//spl_autoload_register( '_psr4_autoloader' );
 
-
-require_once 'DataFetcher.php';
-require_once 'RedisDataViewer.php';
-
-
-
-$ip = '172.30.11.225';
-$port = 31935;
-$dataFetcher = new DataFetcher($ip, $port);
 $redisDataViewer = new RedisDataViewer();
 try {
 
-    // Verbindung zum Server herstellen und Daten abrufen
-    $dataFetcher->fetchAndSendToRedis();
-    $redisDataViewer->viewDataFromRedis();
+    $redis = new RedisData();
+    $redis->connect();
+    $aisData = $redis->read(true);
+    $redis->close();
+
+    if (empty($aisData)) {
+        echo "Keine Daten in Redis gefunden." . PHP_EOL;
+    } else {
+        echo "AIS-Daten aus Redis:" . PHP_EOL;
+        foreach ($aisData as $data) {
+            echo var_dump($data) . PHP_EOL;
+        }
+    }
+
 
     } catch (Exception $e) {
         echo "Fehler beim Verbinden und Empfangen von Daten: " . $e->getMessage();

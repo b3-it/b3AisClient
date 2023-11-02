@@ -32,13 +32,13 @@ class Message5 extends Message
     function printObject()
     {
         $output =   '<br>'. "MMSI: " .$this->mmsi. '<br>' .
-                    "Message type: " .$this->messageType. '<br>' .
-                    "Name: " .$this->name. '<br>' .
-                    "ETA month (UTC): ". $this->ETAmonth . '<br>' .
-                    "ETA day (UTC): ". $this->ETAday . '<br>' .
-                    "ETA hour (UTC): ". $this->ETAhour . '<br>' .
-                    "ETA minute (UTC): ". $this->ETAminute . '<br>' .
-                    "Destination: " .$this->destinaton. '<br>' ;
+            "Message type: " .$this->messageType. '<br>' .
+            "Name: " .$this->name. '<br>' .
+            "ETA month (UTC): ". $this->ETAmonth . '<br>' .
+            "ETA day (UTC): ". $this->ETAday . '<br>' .
+            "ETA hour (UTC): ". $this->ETAhour . '<br>' .
+            "ETA minute (UTC): ". $this->ETAminute . '<br>' .
+            "Destination: " .$this->destinaton. '<br>' ;
 
         echo $output;
     }

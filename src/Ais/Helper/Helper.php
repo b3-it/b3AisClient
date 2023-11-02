@@ -36,13 +36,13 @@ define('ERROR_INVALID_MULTIPART_MESSAGE', -6);
 class Helper
 {
 
-    public $_resultBuffer;
+    protected $_resultBuffer;
 
 
-//    public function __get($name)
-//    {
-//        return $this->$name;
-//    }
+    public function __get($name)
+    {
+        return $this->$name;
+    }
 
     /**
      * Konvertiert einen gegebenen Wert in eine Breitengrad-Koordinate.
@@ -197,7 +197,6 @@ class Helper
      * Sie dient zum Dekodieren des ITU AIS Payloads.
      *
      * @param string $aisdata168 Die AIS-Daten, die dekodiert werden sollen.
-     * @param string $channel
      */
     function decodeAIS($aisdata168) {
 
@@ -221,12 +220,18 @@ class Helper
             case 24:
                 $message = new Message24($messageType);
                 break;
+            default:
+                echo "Unerkannte Nachricht.";
+                break;
         }
-        //prüfen on message !=null
-        $this->_resultBuffer = $message->decode($aisdata168);
-        $message->printObject();
 
-        return $message;
+        $this->_resultBuffer = null;
+        if(!empty($message)) {
+            $this->_resultBuffer = $message->decode($aisdata168);
+        }
+        //$message->printObject();
+
+        //return $message;
     }
 
     /**
@@ -234,7 +239,6 @@ class Helper
      * das zur weiteren Dekodierung verwendet wird.
      *
      * @param string $itu - ITU-Daten im AIS-Format (ASCII)
-     * @param $messageChannel
      */
     function processAisItu($itu) {
         $aisData168 = ''; // Sechs-Bit-Array von ASCII-Zeichen
@@ -329,7 +333,7 @@ class Helper
                 }
             }
         }
-        return -1; // Fehler, wenn die Prüfsumme nicht übereinstimmt
+        return -1; // Fehler
     }
 
 
@@ -350,7 +354,7 @@ class Helper
         // Durchsuchen des Puffers nach Nachrichtensegmenten mit dem Startmuster "VDM"
         while (($start = strpos($currentBuffer, "VDM", $lastPosition)) !== FALSE) {
             // Prüfen, ob das Ende des aktuellen Segments (beendet mit "\r\n") gefunden wurde
-            if (($end = strpos($currentBuffer, "\r\n", $start)) !== FALSE) {
+            if (($end = strpos($currentBuffer, "\r", $start)) !== FALSE) {
                 // Extrahieren des Nachrichtensegments aus dem Puffer
                 $messageSegment = substr($currentBuffer, $start - 3, ($end - $start + 3));
 

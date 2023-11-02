@@ -1,29 +1,19 @@
 <?php
-namespace Ais;
-use Predis\Client;
 
-require 'Decoder.php';
+namespace Ais;
+use Exception;
+use Ais\Helper\Helper;
+
+error_reporting(E_ALL);
 
 // Schreibprozess (Daten sammeln und in Redis schreiben):
 class DataFetcher {
     private $ip;
     private $port;
 
-    private $redisClient;
-    /**
-     * @var null
-     */
-
-
     public function __construct($ip, $port) {
         $this->ip = $ip;
         $this->port = $port;
-
-        $this->redisClient = new Client([
-           'scheme' => 'tcp',
-           'host' => 'localhost', // Hostname oder IP-Adresse Ihres Redis-Servers
-           'post' => '6379', // Port des Redis-Servers
-        ]);
     }
 
     public function connect(){
@@ -42,17 +32,30 @@ class DataFetcher {
             throw new Exception("socket_connect() failed: reason: " . socket_strerror(socket_last_error($sock)));
         }
 
+//        $errno = "";
+//        $errstr = "";
+//        $sock = fsockopen($this->ip, $this->port,$errno, $errstr,5);
+//        if ($sock === false) {
+//            throw new Exception("socket_create() failed: reason: " . socket_strerror(socket_last_error()));
+//        }
         return $sock;
     }
+
+
+
 
     public function fetchAndSendToRedis() {
 
         $sock = $this->connect();
         $data = [];
-        $starttime = time();
-        $endTime = $starttime + 2;
+        $startTime = time();
+        $endTime = $startTime + 5;
 
-        while ($endTime > time()) {
+
+
+        $decodedDataA = [];
+
+        while (time() < $endTime) {
 
             $buffer = socket_read($sock, 1024, PHP_NORMAL_READ);
 
@@ -84,39 +87,53 @@ class DataFetcher {
             echo "Empfangene Daten: " . $buffer . PHP_EOL;
 
             $decodedData = $this->sendDataToDecoder($data);
-//            $data = [];
-
+            if(!empty($decodedData)) {
+                $decodedDataA[] = $decodedData;
+            }
+            //var_dump($decodedData);
+//            echo "test";
+            //geht nicht aus der schleife raus!
         }
-        $this->writeDataToRedis($decodedData);
-        return $data;
+        $redis = new RedisData();
+        $redis->connect();
+        $redis->clear();
+        $redis->write($decodedDataA);
+        $test = $redis->read();
+        $redis->close();
+
+        echo "out";
     }
 
 
-    public function writeDataToRedis($decodedData)
-    {
-        //zuerst das cache leeren fehlt noch
-        $this->redisClient->rpush('ais_data', $decodedData);
-    }
+//    public function writeDataToRedis($decodedData)
+//    {
+//
+//        //serialisierung
+//        $redis = new \Redis();
+//        $redis->connect('127.0.0.1', 6379);
+////        echo "Verbindung zum Server erfolgreich hergestellt." . PHP_EOL;
+//        $redis->del('ais_data');
+//        $redis->rpush('ais_data', serialize($decodedData));
+//        $redis->close();
+//    }
 
     function sendDataToDecoder(array $data)
     {
+        $decodedData = null;
+        $helper = new Helper();
 
-        $decoder = new Decoder();
         foreach ($data as $line){
 
             if (empty($line)) {
                 continue;
             }
 
-           $decodedData = $decoder->process_ais_buf(($line));
+            $helper->process_ais_buf($line);
+            $decodedData = $helper->_resultBuffer;
+            //var_dump($decodedData);
         }
         return $decodedData;
-
-
     }
-
-
-
 
 }
 

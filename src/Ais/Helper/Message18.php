@@ -29,12 +29,12 @@ class Message18 extends Message
     function printObject()
     {
         $output =   '<br>'. "MMSI: " .$this->mmsi. '<br>' .
-                    "Message type: " .$this->messageType. '<br>'.
-                    "Speed over Ground: " .$this->speedOverGround. '<br>' .
-                    "Longitude : " .$this->longitude. '<br>' .
-                    "Latitude: " .$this->latitude. '<br>' .
-                    "Course over Ground: " .$this->courseOverGround. '<br>' .
-                    "Timestamp: ". $this->timestamp . '<br>';
+            "Message type: " .$this->messageType. '<br>'.
+            "Speed over Ground: " .$this->speedOverGround. '<br>' .
+            "Longitude : " .$this->longitude. '<br>' .
+            "Latitude: " .$this->latitude. '<br>' .
+            "Course over Ground: " .$this->courseOverGround. '<br>' .
+            "Timestamp: ". $this->timestamp . '<br>';
 
         echo $output;
     }
