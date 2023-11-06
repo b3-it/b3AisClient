@@ -4,11 +4,12 @@ namespace Ais\Helper;
 
 use Ais\Helper\Message;
 use Ais\Helper\Message123;
+
 use Ais\Helper\Message18;
 use Ais\Helper\Message19;
 use Ais\Helper\Message24;
 use Ais\Helper\Message5;
-
+use function PHPUnit\Framework\exactly;
 
 
 require_once('Message.php');
@@ -36,13 +37,6 @@ define('ERROR_INVALID_MULTIPART_MESSAGE', -6);
 class Helper
 {
 
-    protected $_resultBuffer;
-
-
-    public function __get($name)
-    {
-        return $this->$name;
-    }
 
     /**
      * Konvertiert einen gegebenen Wert in eine Breitengrad-Koordinate.
@@ -198,60 +192,97 @@ class Helper
      *
      * @param string $aisdata168 Die AIS-Daten, die dekodiert werden sollen.
      */
-    function decodeAIS($aisdata168) {
+    function decodeMessages($incommingArray) {
+        $bitsArray = $this->processPayload($incommingArray);
+        $decodedMessages = [];
 
-        $message = null;
-        $messageType = bindec(substr($aisdata168, 0, 6));
-        switch ($messageType) {
-            case 1:
-            case 2:
-            case 3:
-                $message = new Message123($messageType);
-                break;
-            case 5:
-                $message = new Message5($messageType);
-                break;
-            case 18:
-                $message = new Message18($messageType);
-                break;
-            case 19:
-                $message = new Message19($messageType);
-                break;
-            case 24:
-                $message = new Message24($messageType);
-                break;
-            default:
-                echo "Unerkannte Nachricht.";
-                break;
+        foreach ($bitsArray as $bits){
+            $messageType = bindec(substr($bits, 0, 6));
+            $message = null;
+
+            switch ($messageType) {
+                case 1:
+                case 2:
+                case 3:
+                    $message = new Message123($messageType);
+                    break;
+                case 5:
+                    $message = new Message5($messageType);
+                    break;
+                case 18:
+                    $message = new Message18($messageType);
+                    break;
+                case 19:
+                    $message = new Message19($messageType);
+                    break;
+                case 24:
+                    $message = new Message24($messageType);
+                    break;
+                default:
+                    echo "Unerkannte Nachricht.";
+                    break;
+            }
+
+            if(!empty($message)) {
+                $decodedMessage = $message->decode($bits);
+                $decodedMessages[] = $decodedMessage;
+            }
         }
 
-        $this->_resultBuffer = null;
-        if(!empty($message)) {
-            $this->_resultBuffer = $message->decode($aisdata168);
-        }
-        //$message->printObject();
-
-        //return $message;
+        return $decodedMessages;
     }
 
     /**
      * Diese Funktion konvertiert eine AIS-Nachricht im ITU-1371-Format in das AIS-Datenformat,
      * das zur weiteren Dekodierung verwendet wird.
      *
-     * @param string $itu - ITU-Daten im AIS-Format (ASCII)
      */
-    function processAisItu($itu) {
-        $aisData168 = ''; // Sechs-Bit-Array von ASCII-Zeichen
-        $aisNmeaArray = str_split($itu); // In ein Array konvertieren
-        foreach ($aisNmeaArray as $value) {
-            $decimalValue = $this->convertAsciiToDecimal($value); // ASCII zu Dezimal konvertieren
-            $eightBitValue = $this->convertAsciiTo8Bit($decimalValue); // Dezimal zu 8-Bit umwandeln
-            $sixBitValue = $this->convertDecimalTo6Bit($eightBitValue); // 8-Bit zu 6-Bit umwandeln
-            $aisData168 .= $sixBitValue; // An das 6-Bit-Array anhängen
+    function processPayload($incommingArray) {
+        $payloadArray  = $this->extractPayload($incommingArray);
+        $bitsArray = [];
+
+        foreach ($payloadArray as $payload) {
+            $aisData168 = ""; // Sechs-Bit-Array von ASCII-Zeichen
+            $symbolsArray = str_split($payload); // In ein Array konvertieren
+
+            foreach ($symbolsArray as $symbol){
+                $decimalValue = $this->convertAsciiToDecimal($symbol); // ASCII zu Dezimal konvertieren
+                $eightBitValue = $this->convertAsciiTo8Bit($decimalValue); // Dezimal zu 8-Bit umwandeln
+                $sixBitValue = $this->convertDecimalTo6Bit($eightBitValue); // 8-Bit zu 6-Bit umwandeln
+                $aisData168 .=  $sixBitValue; // An das 6-Bit-Array anhängen
+            }
+            $bitsArray [] = $aisData168;
         }
 
-        $this->decodeAIS($aisData168); // Dekodierung der AIS-Daten aufrufen
+        return $bitsArray;
     }
+
+    function calculateAISChecksum($message)
+    {
+        $calculatedChecksum = 0; // Initialisierung der Prüfsumme
+
+        // Berechnung der Checksumme von '!' bis '*'
+        $endPosition = strrpos($message, '*'); // Suche nach *
+        if (!$endPosition) return -1; // Fehler bei fehlendem '*'
+
+        $checksumHexString = substr($message, $endPosition + 1);
+        if (strlen($checksumHexString) != 2) return -1; // Fehler bei ungültiger Checksummenlänge
+
+        $decodedChecksum = (int)hexdec($checksumHexString); // Umwandeln des Hex-Strings in Dezimalwert
+
+        // XOR-Verknüpfung für die NMEA-Checksumme
+        for ($i = 1; $i < $endPosition; $i++) {
+            $calculatedChecksum ^= ord($message[$i]);
+        }
+
+        if ($calculatedChecksum == $decodedChecksum) {
+            return true;
+        }else{
+            return false;
+        }
+
+    }
+
 
 
     /**
@@ -260,81 +291,121 @@ class Helper
      * weitergegeben werden.
      *
      * @param string $rawdata - Rohe AIS-Rohdaten ohne Zeilenumbruch
-     * @return int - Rückgabewert, -1 bei Fehler
+     * @return array - Rückgabewert, -1 bei Fehler
      */
-    public function processAisRaw($rawdata)
+    public function extractPayload($incommingArray)
     {
-        static $numSequences, $sequenceNumber,$previousSequenceNumber; // Variablen für Sequenzen (1-9)
-        static $messageSid = -1, $currentMessageSid; // Variablen für Nachrichten-ID
-        static $ituBuffer; // Puffer für ITU-Nachricht
-        $checksum = 0; // Initialisierung der Prüfsumme
+        $cleanedArray = $this->cleanMessage($incommingArray);
+        $mergedPayload = [];
 
-        // Berechnung der Checksumme von '!' bis '*'
-        $endPosition = strrpos($rawdata, '*'); // Suche nach *
-        if ($endPosition === false) return -1; // Fehler bei fehlendem '*'
+        $reihenfolgeArray = [];
+        foreach ($cleanedArray as $cleanedLine) {
 
-        $checksumHexString = substr($rawdata, $endPosition + 1); // Extrahieren der Checksumme als Hex-String
-        if (strlen($checksumHexString) != 2) return -1; // Fehler bei ungültiger Checksummenlänge
+            if($this->calculateAISChecksum($cleanedLine)){
 
-        $decodedChecksum = (int)hexdec($checksumHexString); // Umwandeln des Hex-Strings in Dezimalwert
+                $cleanedLineExploded = explode("," , $cleanedLine);
 
-        // XOR-Verknüpfung für die NMEA-Checksumme
-        for ($index = 1; $index < $endPosition; $index++) $checksum ^= ord($rawdata[$index]);
+                $numSequences = (int)$cleanedLineExploded[1];
+                $sequenceNumber = (int)$cleanedLineExploded[2];
+                $messageId = ($cleanedLineExploded[3] == '') ? -1 : (int)$cleanedLineExploded[3];
+                $payload = $cleanedLineExploded[5];
 
-        if ($checksum == $decodedChecksum) { // Überprüfung der NMEA-Checksumme
-            $rawDataArray = explode(',', $rawdata); // Aufteilen der Rohdaten
+                if ($numSequences == 1){
+                    $mergedPayload[] = $cleanedLineExploded[5];
+                }else {
+                    //wenn es mehrere segmente gibt, jedem payload die seqNum zuweisen und anschließend sortieren
+                    if ($sequenceNumber >= 1 && $sequenceNumber <= $numSequences) {
+                        $reihenfolgeArray[$sequenceNumber] = $payload;
 
-            // Extrahieren der Sequenz- und Nachrichten-IDs
-            $numSequences = (int)$rawDataArray[1];
-            $sequenceNumber = (int)$rawDataArray[2];
-
-            // Extrahieren der Nachrichten-ID, Prüfen auf leere Nachrichten-ID
-            $messageSid = ($rawDataArray[3] == '') ? -1 : (int)$rawDataArray[3];
-
-            if ($numSequences < 1 || $numSequences > 9) {
-                echo "ERROR,INVALID_NUMBER_OF_SEQUENCES ".time()." $rawdata\n";
-                return -1;
-            }
-            else if ($sequenceNumber < 1 || $sequenceNumber > 9) { // invalid sequences number
-                echo "ERROR,INVALID_SEQUENCES_NUMBER ".time()." $rawdata\n";
-                return -1;
-            }
-            else if ($sequenceNumber > $numSequences) {
-                echo "ERROR,INVALID_SEQUENCE_NUMBER_OR_INVALID_NUMBER_OF_SEQUENCES ".time()." $rawdata\n";
-                return -1;
-            }
-            else { // Sequenzierung ist in Ordnung, Behandlung von Einzel- und Mehrteilnachrichten
-                if ($sequenceNumber == 1) {
-                    // Initialisierung für die erste Sequenz
-                    $ituBuffer = "";
-                    $previousSequenceNumber = 0;
-                    $currentMessageSid = $messageSid;
-                }
-
-                if ($numSequences > 1) { // Für Mehrteilnachrichten
-                    // Überprüfen der Nachrichten-ID und Sequenzreihenfolge
-                    if ($currentMessageSid != $messageSid || $messageSid == -1 || ($sequenceNumber - $previousSequenceNumber) != 1) {
-                        // Ungültige Nachrichten-ID, ungültige Anfangsnachrichten-ID oder nicht in Reihenfolge
-                        $messageSid = -1;
-                        $currentMessageSid = -1;
-                        echo "ERROR, INVALID_MULTIPART_MESSAGE " . time() . " $rawdata\n";
-                        return -1;
-                    } else {
-                        $previousSequenceNumber++;
+                        // Wenn alle Segmente gesammelt sind, kombinieren
+                        if (count($reihenfolgeArray) === $numSequences) {
+                            ksort($reihenfolgeArray); //das Array sortieren, falls die Reihenfolge nicht aufeinanderfolgend ist
+                            $mergedPayload[] = implode('', $reihenfolgeArray);
+                            $reihenfolgeArray =  [];
+                        }
                     }
-                }
 
-                // Hinzufügen der ITU-Nachricht und Extrahieren der Füllbits
-                $ituBuffer .= $rawDataArray[5];
-
-                // Verarbeiten der Nachricht, abhängig von der Sequenz
-                if ($numSequences == 1 || $numSequences == $previousSequenceNumber) {
-                    return $this->processAisItu($ituBuffer);
                 }
             }
         }
-        return -1; // Fehler
+        return $mergedPayload;
     }
+
+
+
+
+
+//        static $numSequences, $sequenceNumber,$previousSequenceNumber; // Variablen für Sequenzen (1-9)
+//        static $messageSid = -1, $currentMessageSid; // Variablen für Nachrichten-ID
+//        static $ituBuffer; // Puffer für ITU-Nachricht
+//        $checksum = 0; // Initialisierung der Prüfsumme
+//
+//        // Berechnung der Checksumme von '!' bis '*'
+//        $endPosition = strrpos($rawdata, '*'); // Suche nach *
+//        if ($endPosition === false) return -1; // Fehler bei fehlendem '*'
+//
+//        $checksumHexString = substr($rawdata, $endPosition + 1); // Extrahieren der Checksumme als Hex-String
+//        if (strlen($checksumHexString) != 2) return -1; // Fehler bei ungültiger Checksummenlänge
+//
+//        $decodedChecksum = (int)hexdec($checksumHexString); // Umwandeln des Hex-Strings in Dezimalwert
+//
+//        // XOR-Verknüpfung für die NMEA-Checksumme
+//        for ($index = 1; $index < $endPosition; $index++) $checksum ^= ord($rawdata[$index]);
+//
+//        if ($checksum == $decodedChecksum) { // Überprüfung der NMEA-Checksumme
+//            $rawDataArray = explode(',', $rawdata); // Aufteilen der Rohdaten
+//
+//            // Extrahieren der Sequenz- und Nachrichten-IDs
+//            $numSequences = (int)$rawDataArray[1];
+//            $sequenceNumber = (int)$rawDataArray[2];
+//
+//            // Extrahieren der Nachrichten-ID, Prüfen auf leere Nachrichten-ID
+//            $messageSid = ($rawDataArray[3] == '') ? -1 : (int)$rawDataArray[3];
+//
+//            if ($numSequences < 1 || $numSequences > 9) {
+//                echo "ERROR,INVALID_NUMBER_OF_SEQUENCES ".time()." $rawdata\n";
+//                return -1;
+//            }
+//            else if ($sequenceNumber < 1 || $sequenceNumber > 9) { // invalid sequences number
+//                echo "ERROR,INVALID_SEQUENCES_NUMBER ".time()." $rawdata\n";
+//                return -1;
+//            }
+//            else if ($sequenceNumber > $numSequences) {
+//                echo "ERROR,INVALID_SEQUENCE_NUMBER_OR_INVALID_NUMBER_OF_SEQUENCES ".time()." $rawdata\n";
+//                return -1;
+//            }
+//            else { // Sequenzierung ist in Ordnung, Behandlung von Einzel- und Mehrteilnachrichten
+//                if ($sequenceNumber == 1) {
+//                    // Initialisierung für die erste Sequenz
+//                    $ituBuffer = "";
+//                    $previousSequenceNumber = 0;
+//                    $currentMessageSid = $messageSid;
+//                }
+//
+//                if ($numSequences > 1) { // Für Mehrteilnachrichten
+//                    // Überprüfen der Nachrichten-ID und Sequenzreihenfolge
+//                    if ($currentMessageSid != $messageSid || $messageSid == -1 || ($sequenceNumber - $previousSequenceNumber) != 1) {
+//                        // Ungültige Nachrichten-ID, ungültige Anfangsnachrichten-ID oder nicht in Reihenfolge
+//                        $messageSid = -1;
+//                        $currentMessageSid = -1;
+//                        echo "ERROR, INVALID_MULTIPART_MESSAGE " . time() . " $rawdata\n";
+//                        return -1;
+//                    } else {
+//                        $previousSequenceNumber++;
+//                    }
+//                }
+//
+//                // Hinzufügen der ITU-Nachricht und Extrahieren der Füllbits
+//                $ituBuffer .= $rawDataArray[5];
+//
+//                // Verarbeiten der Nachricht, abhängig von der Sequenz
+//                if ($numSequences == 1 || $numSequences == $previousSequenceNumber) {
+//                    return $this->processAisItu($ituBuffer);
+//                }
+//            }
+//        }
+//        return -1; // Fehler
+//    }
 
 
 
@@ -342,37 +413,55 @@ class Helper
 
     /**
      * Verarbeitet die empfangenen Daten aus der seriellen oder IP-Kommunikation.
-     * Entfernt \r\n aus "!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\r\n"
+     * Entfernt \r aus "!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\r"
      * @param string $incomingBuffer Die empfangenen Daten, die dem Puffer hinzugefügt werden sollen.
-     * @return void
+     * @return array
      */
-    public function process_ais_buf($incomingBuffer) {
-        static $currentBuffer = ""; // Statischer Puffer für unvollständige Nachrichten
-        $currentBuffer = $currentBuffer.$incomingBuffer; // Fügt die empfangenen Daten zum aktuellen Puffer hinzu
-        $lastPosition = 0; // Speichert die letzte Position, bis zu der die Daten verarbeitet wurden
+    public function cleanMessage($incomingArray)
+    {
 
-        // Durchsuchen des Puffers nach Nachrichtensegmenten mit dem Startmuster "VDM"
-        while (($start = strpos($currentBuffer, "VDM", $lastPosition)) !== FALSE) {
-            // Prüfen, ob das Ende des aktuellen Segments (beendet mit "\r\n") gefunden wurde
-            if (($end = strpos($currentBuffer, "\r", $start)) !== FALSE) {
-                // Extrahieren des Nachrichtensegments aus dem Puffer
-                $messageSegment = substr($currentBuffer, $start - 3, ($end - $start + 3));
+        $cleanedMessages = [];
 
+        foreach ($incomingArray as $line){
+            if (empty($line)){
+                continue;
+            }
 
-                $this->processAisRaw($messageSegment);
-
-                // Aktualisieren der letzten Position im Puffer
-                $lastPosition = $end + 1;
-            } else break; // Wenn das Ende des Segments nicht gefunden wurde, wird die Schleife unterbrochen
+            $cleanedLine = rtrim($line, "\r");
+            $cleanedMessages [] = $cleanedLine;
         }
-
-        // Bereinigen des Puffers: Entfernen der bereits verarbeiteten Daten
-        if ($lastPosition > 0) $currentBuffer = substr($currentBuffer, $lastPosition);
-
-        // Prüfen auf Pufferüberlauf und Zurücksetzen bei Bedarf
-        if (strlen($currentBuffer) > 1024) $currentBuffer = "";
+        return $cleanedMessages;
 
     }
+
+
+
+
+//        $currentBuffer = $currentBuffer.$incomingBuffer; // Fügt die empfangenen Daten zum aktuellen Puffer hinzu
+//        $lastPosition = 0; // Speichert die letzte Position, bis zu der die Daten verarbeitet wurden
+//
+//        // Durchsuchen des Puffers nach Nachrichtensegmenten mit dem Startmuster "VDM"
+//        while (($start = strpos($currentBuffer, "VDM", $lastPosition)) !== FALSE) {
+//            // Prüfen, ob das Ende des aktuellen Segments (beendet mit "\r\n") gefunden wurde
+//            if (($end = strpos($currentBuffer, "\r", $start)) !== FALSE) {
+//                // Extrahieren des Nachrichtensegments aus dem Puffer
+//                $messageSegment = substr($currentBuffer, $start - 3, ($end - $start + 3));
+//
+//
+//                $this->processAisRaw($messageSegment);
+//
+//                // Aktualisieren der letzten Position im Puffer
+//                $lastPosition = $end + 1;
+//            } else break; // Wenn das Ende des Segments nicht gefunden wurde, wird die Schleife unterbrochen
+//        }
+//
+//        // Bereinigen des Puffers: Entfernen der bereits verarbeiteten Daten
+//        if ($lastPosition > 0) $currentBuffer = substr($currentBuffer, $lastPosition);
+//
+//        // Prüfen auf Pufferüberlauf und Zurücksetzen bei Bedarf
+//        if (strlen($currentBuffer) > 1024) $currentBuffer = "";
+
+
 
     /**
      * Erzeugt die AIS-kodierte Darstellung für eine Breitengrad-Koordinate.
