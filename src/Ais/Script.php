@@ -24,28 +24,25 @@ spl_autoload_register( function ($class) {
 
 
 require_once 'DataFetcher.php';
-require_once 'RedisDataViewer.php';
+require_once 'Logger.php';
+require_once 'Config.php';
 
-
-
-$ip = '172.30.11.225';
-$port = 31935;
-$dataFetcher = new DataFetcher($ip, $port);
-$redisDataViewer = new RedisDataViewer();
 try {
+    $config = new Config('config.json');
+    $logger = new Logger('log.txt');
 
+
+    $ip = $config->get('ip');
+    $port = $config->get('port');
+
+    $dataFetcher = new DataFetcher($config, $logger);
     // Verbindung zum Server herstellen und Daten abrufen
     $dataFetcher->fetchAndSendToRedis();
-    $redisDataViewer->viewDataFromRedis();
-
-    } catch (Exception $e) {
-        echo "Fehler beim Verbinden und Empfangen von Daten: " . $e->getMessage();
-    }
 
 
-
-
-
+} catch (Exception $e) {
+    echo "Fehler beim Verbinden und Empfangen von Daten: " . $e->getMessage();
+}
 
 ?>
 

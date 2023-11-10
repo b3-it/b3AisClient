@@ -21,10 +21,10 @@ spl_autoload_register( function ($class) {
 });
 
 
-$redisDataViewer = new RedisDataViewer();
-try {
 
-    $redis = new RedisData();
+try {
+    $config = new Config("config.json");
+    $redis = new RedisData($config);
     $redis->connect();
     $aisData = $redis->read(true);
     $redis->close();
@@ -35,6 +35,17 @@ try {
         echo "AIS-Daten aus Redis:" . PHP_EOL;
         foreach ($aisData as $data) {
             echo var_dump($data) . PHP_EOL;
+        }
+
+        $i = 0;
+        foreach ($aisData as $data) {
+            $lat = $data->latitude;
+            $long = $data->longitude;
+            $name = $data->name;
+            $mmsi = $data->mmsi;
+//            echo "featureList[$i] =  new Feature({geometry:new Point([$long, $lat]),name:'$name', mmsi:'$mmsi'}); <br>";
+            echo "featureList[$i] = {'lon' : $long,'lat':  $lat, 'name':'$name','mmsi':'$mmsi'}; <br>";
+            $i++;
         }
     }
 

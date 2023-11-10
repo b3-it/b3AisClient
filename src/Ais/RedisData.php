@@ -6,15 +6,19 @@ namespace Ais;
 
 class RedisData
 {
-    protected $_ip =  '127.0.0.1';
-    protected $_port = 6379;
+    protected $_ip;
+    protected $_port;
 
     protected $data_key = 'ais_data';
 
     protected $_redis = null;
-    public function __construct()
+    public function __construct(Config $config)
     {
+        $this->_ip = $config->get('redis_ip') ?? '127.0.0.1';
+        $this->_port = $config->get('redis_port') ?? 6379;
     }
+
+
 
     public function connect()
     {

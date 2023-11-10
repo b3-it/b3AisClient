@@ -20,7 +20,9 @@ class Message24 extends Message
     {
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
         //        $partNumber = bindec(substr($aisdata168, 38, 2));
-        $this->name = $this->convertBinaryToAISChars($aisdata168, 40, 120);
+        $this->name = $this->convertBinaryToAISChars($aisdata168, 90, 42);
+        $this->receivedTimestamp = time();
+
         return $this;
 
         //        if ($partNumber == 0) {

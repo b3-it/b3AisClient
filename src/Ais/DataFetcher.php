@@ -11,128 +11,126 @@ class DataFetcher {
     private $ip;
     private $port;
 
-    public function __construct($ip, $port) {
-        $this->ip = $ip;
-        $this->port = $port;
+    private $logger;
+    private $config;
+
+
+    public function __construct(Config $config, Logger $logger) {
+        $this->config = $config;
+        $this->logger = $logger;
+
+        $this->ip = $config->get('ip');
+        $this->port = $config->get('port');
+
     }
 
     public function connect(){
 
-        $sock = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
+        $sock = fsockopen($this->ip,$this->port, $errno, $errstr, 5);
 
-        if ($sock === false) {
-            throw new Exception("socket_create() failed: reason: " . socket_strerror(socket_last_error()));
+        if (!$sock){
+            $errorMessage = "fsockopen() failed: error_code: $errno, error_message: $errstr";
+            $this->logger->log($errorMessage, 'error');
+            throw new Exception($errorMessage);
         }
 
-        if (!socket_set_option($sock, SOL_SOCKET, SO_RCVTIMEO, array("sec" => 5, "usec" => 0))) {
-            throw new Exception("socket_set_option() failed: reason: " . socket_strerror(socket_last_error()));
-        }
-
-        if (socket_connect($sock, $this->ip, $this->port) === false) {
-            throw new Exception("socket_connect() failed: reason: " . socket_strerror(socket_last_error($sock)));
-        }
-
-//        $errno = "";
-//        $errstr = "";
-//        $sock = fsockopen($this->ip, $this->port,$errno, $errstr,5);
-//        if ($sock === false) {
-//            throw new Exception("socket_create() failed: reason: " . socket_strerror(socket_last_error()));
-//        }
         return $sock;
     }
 
 
+    public function fetchAndSendToRedis()
+    {
+        try {
+            $sock = $this->connect();
+            $data = [];
+            $startTime = time();
+            $endTime = $startTime + 5;
+            $readTimeout = 300;
+            $decodedDataA = [];
+            $incompleteMessage = '';
 
+            stream_set_timeout($sock, $readTimeout);
 
-    public function fetchAndSendToRedis() {
+            $info = stream_get_meta_data($sock);
+            if ($info['timed_out']) {
+                $this->logger->log('Timeout', 'error');
+                throw new Exception('Timeout');
+            }
 
-        $sock = $this->connect();
-        $data = [];
-        $startTime = time();
-        $endTime = $startTime + 5;
+            while (time() < $endTime) {
 
+                $buffer = fread($sock, 1024);  //Problem: schneidet die letzen nachtichten ab
 
-
-        $decodedDataA = [];
-
-        while (time() < $endTime) {
-
-            $buffer = socket_read($sock, 1024, PHP_NORMAL_READ);
-
-            if ($buffer === false) {
-
-                $socketError = socket_last_error($sock);
-
-                // Überprüfen, ob die Verbindung bewusst beendet wurde.
-                if ($socketError === SOCKET_ECONNRESET) {
-                    echo "Verbindung zurückgesetzt." . '<br>';
-                } else {
-                    echo "Fehler beim Lesen vom Socket: " . socket_strerror($socketError) . '<br>';
+                if (!$buffer) {
+                    if (feof($sock)) {
+                        $this->logger->log('Verbindung geschlossen.', 'error');
+                    } else {
+                        $this->logger->log('Fehler beim Lesen vom Socket.', 'error');
+                    }
+                    break;
                 }
 
-                break;
+                //Falls die Nachricht unvollständig ankommt, weil der Buffer voll ist
+                $buffer = $incompleteMessage . $buffer;
+
+                $data = explode("\n", $buffer);
+                $incompleteMessage = '';
+
+                if (end($data) !== '') {
+                    $incompleteMessage = array_pop($data);
+                }
+
+                $data = array_filter($data, 'strlen'); // Leere Zeilen aus den Nachrichten entfernen
+                $this->logger->log('Array von empfangenen Daten: ' . json_encode($data));
+
+                echo "Array von empfangenen Daten: ". PHP_EOL;
+                var_dump($data);
+
+                $decodedData = $this->sendDataToDecoder($data);
+
+                if (!empty($decodedData)) {
+                    foreach ($decodedData as $datum) {
+                        $decodedDataA[$datum->mmsi] = $datum;
+                        $this->logger->log("Dekodierte Nachricht: " . json_encode($datum), "");
+                        //var_dump($datum);
+                    }
+                }
+
             }
 
-            if (empty($buffer)) {
-                echo "Verbindung geschlossen" . '<br>';
-                break;
-            } elseif ($buffer === "\n"){
-                continue;
-            }
-            else {
-                $data[] = $buffer;
-            }
+            fclose($sock);
+            $redis = new RedisData($this->config);
+            $redis->connect();
+            $redis->clear();
+            $redis->write($decodedDataA);
+            $test = $redis->read();
+            var_dump($test);
+            $redis->close();
 
-            echo "<pre>";
-            echo "Empfangene Daten: " . $buffer . PHP_EOL;
-
-            $decodedData = $this->sendDataToDecoder($data);
-            if(!empty($decodedData)) {
-                $decodedDataA[] = $decodedData;
-            }
-            //var_dump($decodedData);
-//            echo "test";
-            //geht nicht aus der schleife raus!
+        } catch (Exception $e) {
+            $this->logger->log('Exception: ' . $e->getMessage(), 'error');
         }
-        $redis = new RedisData();
-        $redis->connect();
-        $redis->clear();
-        $redis->write($decodedDataA);
-        $test = $redis->read();
-        $redis->close();
-
-        echo "out";
     }
 
 
-//    public function writeDataToRedis($decodedData)
-//    {
-//
-//        //serialisierung
-//        $redis = new \Redis();
-//        $redis->connect('127.0.0.1', 6379);
-////        echo "Verbindung zum Server erfolgreich hergestellt." . PHP_EOL;
-//        $redis->del('ais_data');
-//        $redis->rpush('ais_data', serialize($decodedData));
-//        $redis->close();
-//    }
 
     function sendDataToDecoder(array $data)
     {
-        $decodedData = null;
-        $helper = new Helper();
 
-        foreach ($data as $line){
+        try {
+            $helper = new Helper();
+            $decodedData = $helper->decodeMessages($data);
 
-            if (empty($line)) {
-                continue;
+            if (empty($decodedData)) {
+                $this->logger->log('Keine dekodierten Daten vorhanden.', 'info');
             }
 
-            $helper->process_ais_buf($line);
-            $decodedData = $helper->_resultBuffer;
-            //var_dump($decodedData);
+            return $decodedData;
+        } catch (Exception $e) {
+            $this->logger->log('Fehler beim Senden von Daten an den Decoder: ' . $e->getMessage(), 'error');
+            return [];
         }
-        return $decodedData;
+
     }
 
 }

@@ -15,53 +15,59 @@ namespace Ais\Helper;
 class Message extends Helper
 {
 
-    protected $channel = 0;                // Indikator für nicht dekodierte Nachricht, AIS-Klasse nicht definiert
-    protected $name = '';                // Name des Schiffs oder der Einrichtung
-    protected $speedOverGround = -1.0;   // Standardwert für unbekannte Geschwindigkeit
-    protected $courseOverGround = 0.0;   // Standardwert für unbekannten Kurs
-    protected $longitude = 0.0;          // Standardwert für Längengrad
-    protected $latitude = 0.0;           // Standardwert für Breitengrad
+    //public $channel = 0; Indikator für nicht dekodierte Nachricht, AIS-Klasse nicht definiert
+    public $name = '';                // Name des Schiffs oder der Einrichtung
+    public $speedOverGround;
+    public $courseOverGround;
+    public $longitude ;
+    public $latitude;
 
-    protected $timestamp;                // Zeitstempel der Nachricht
-    protected $messageType;              // ID des Nachrichtentyps
-    protected $mmsi;                     // Maritime Mobile Service Identity (MMSI) des Senders
+    public $timestamp;                // Zeitstempel der Nachricht
+    public $messageType;              // ID des Nachrichtentyps
+    public $mmsi;                     // Maritime Mobile Service Identity (MMSI) des Senders
 
-    protected $destinaton;
+    public $receivedTimestamp;
 
-    protected $ETAmonth;
-    protected $ETAday;
-    protected $ETAhour;
-    protected $ETAminute;
+
+
+//    public $destinaton;
+
+//    public $ETAmonth;
+//    public $ETAday;
+//    public $ETAhour;
+//    public $ETAminute;
+
+
 
     public function __construct($messageType)
     {
         $this->messageType = $messageType;
     }
 
-    protected function decode($aisdata168)
+    public function decode($aisdata168)
     {}
-    protected function printObject(){}
+    public function printObject(){}
 
 
     public function getEncodeData()
     {
         $res = [];
         $res['name']  = $this->name;
-        $res['speedOverGround'] =  $this->speedOverGround;
-        $res['courseOverGround']  = $this->courseOverGround ;
+//        $res['speedOverGround'] =  $this->speedOverGround;
+//        $res['courseOverGround']  = $this->courseOverGround ;
         $res['longitude']  = $this->longitude;
         $res['latitude']  = $this->latitude ;
 
-        $res['timestamp']  = $this->timestamp;
+        $res['receivedTimestamp']  = $this->receivedTimestamp;
         $res['messageType']  = $this->messageType;
         $res['mmsi']  = $this->mmsi;
 
-        $res['destinaton']  = $this->destinaton;
+//        $res['destinaton']  = $this->destinaton;
 
-        $res['ETAmonth']  = $this->ETAmonth;
-        $res['ETAday']  = $this->ETAday;
-        $res['ETAhour']  = $this->ETAhour;
-        $res['ETAminute']  = $this->ETAminute;
+//        $res['ETAmonth']  = $this->ETAmonth;
+//        $res['ETAday']  = $this->ETAday;
+//        $res['ETAhour']  = $this->ETAhour;
+//        $res['ETAminute']  = $this->ETAminute;
 
         return json_encode($res);
     }

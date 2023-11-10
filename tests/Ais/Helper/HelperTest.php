@@ -4,6 +4,7 @@ namespace Ais\Helper\tests;
 use Ais\Helper\Message;
 use Ais\Helper\Helper;
 
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 
 
@@ -175,19 +176,6 @@ class HelperTest extends TestCase
 
     }
 
-    public function testprocessAisRaw(){
-        $helper = new Helper();
-        $buf = ["!AIVDM,2,1,5,A,539o8i400000@?CKKT1=Bp`tP4ppE<00000000153hJ<54@P00PTUCThU,0*09\r",
-            "!AIVDM,2,2,5,A,AE51C000000000,2*62\r"];
-        $expected = "539o8i400000@?CKKT1=Bp`tP4ppE<00000000153hJ<54@P00PTUCThUAE51C000000000";
-        $result = $helper->extractPayload($buf);
-
-        $this->assertEquals($expected,$result);
-
-    }
-
-
-
     public function testprocessAisRaw1(){
         $helper = new Helper();
         $buf = ["!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\r"];
@@ -197,6 +185,8 @@ class HelperTest extends TestCase
         $this->assertEquals($expected,$result);
 
     }
+
+
 
     public function testprocessAisRaw2(){
         $helper = new Helper();
@@ -210,9 +200,33 @@ class HelperTest extends TestCase
 
     }
 
+    public function testextractPayload(){
+
+        $helper = new Helper();
+        $buf = [ "!AIVDM,2,1,6,A,53@`NV429pN@@@t6220H4U90h5VoKB222222220l0pI466Qk0=0DljDm0,0*6E\r",
+                "!AIVDM,2,2,6,A,CPiH8888888880,2*28\r"];
+        $expected = ["53@`NV429pN@@@t6220H4U90h5VoKB222222220l0pI466Qk0=0DljDm0CPiH8888888880"];
+        $result = $helper->extractPayload($buf);
+
+        $this->assertEquals($expected,$result);
+
+    }
 
 
-    public function testprocessAisRaw3(){
+
+    public function testextractPayload1(){
+
+        $helper = new Helper();
+        $buf = ["!AIVDM,2,1,5,A,539o8i400000@?CKKT1=Bp`tP4ppE<00000000153hJ<54@P00PTUCThU,0*09\r",
+            "!AIVDM,2,2,5,A,AE51C000000000,2*62\r"];
+        $expected = ["539o8i400000@?CKKT1=Bp`tP4ppE<00000000153hJ<54@P00PTUCThUAE51C000000000"];
+        $result = $helper->extractPayload($buf);
+
+        $this->assertEquals($expected,$result);
+
+    }
+
+    public function testextractPayload2(){
         $helper = new Helper();
         $buf = ["!AIVDM,2,1,0,B,C8u:8C@t7@TnGCKfm6Po`e6N`:Va0L2J;06HV50JV?SjBPL3,0*28\r",
                 "!AIVDM,2,2,0,B,11RP,0*17\r",
@@ -225,31 +239,32 @@ class HelperTest extends TestCase
         $this->assertEquals($expected,$result);
 
     }
-//    public function testdecodeMessages()
-//    {
-//        // Erstelle eine Instanz der Klasse, die die decodeAIS-Funktion enthält
-//        $helper = new Helper();
-//
-//        // Beispiel AIS-Nachricht für Nachrichtentyp 1 (angenommen, dies ist gültige AIS-Nachricht)
-//        $aisdata168 = ["!AIVDM,1,1,,A,139O`j?0000PwMRNQwi@0@Oh0<1p,0*04\r" ,
-//            "!AIVDM,1,1,,B,13eK4H01B7PPVj4OD@seDrWb84hD,0*77\r" ,
-//            "!AIVDM,1,1,,A,E>j9driW9WhH@860b37a6P00000@ATmQ?Tnh800000sh20,4*56\r" ,
-//            "!AIVDM,1,1,,A,339NQJP01HPe90`N`s@:HpKb020@,0*4B\r" ,
-//            "!AIVDM,1,1,,A,13A=Ip001t0QNBTO090:n`eh0D25,0*21\r" ,
-//            "!AIVDM,1,1,,B,139dl4?00B0RvwpNiM<=2rKh0@Pl,0*08\r" ,
-//            "!AIVDM,1,1,,B,13MA0?@Oiw0Ml?RNdhRPuPSf08Pm,0*2C\r" ,
-//            "!AIVDM,1,1,,B,33b51:700KPLc8FN`Rt:98Ah00ri,0*05\r" ,
-//            "!AIVDM,1,1,,B,139NVn?P00PcVVDNcqi8BOwf28Pn,0*55\r" ,
-//            "!AIVDM,1,1,,A,33@Tt2001<PW@J4N`R1b087d00vP,0*12\r" ];
-//        $expectedResult = new Message($messageType = bindec(substr($aisdata168[0], 0, 6)));
-//
-//        $result = $helper->decodeMessages($aisdata168);
-//
-//        // Erwartete Ausgabe (dies hängt von der Implementierung der DecoderClass ab)
-//
-//        // Vergleiche das tatsächliche Ergebnis mit dem erwarteten Ergebnis
-//        $this->assertEquals($expectedResult, $result);
-//    }
+
+
+
+
+
+
+
+
+
+    public function testdecodeMessages()
+    {
+        // Erstelle eine Instanz der Klasse, die die decodeAIS-Funktion enthält
+        $helper = new Helper();
+
+        // Beispiel AIS-Nachricht für Nachrichtentyp 1 (angenommen, dies ist gültige AIS-Nachricht)
+        $aisdata168 = ["!AIVDM,2,1,6,A,53@`NV429pN@@@t6220H4U90h5VoKB222222220l0pI466Qk0=0DljDm0,0*6E\r",
+            "!AIVDM,2,2,6,A,CPiH8888888880,2*28\r" ];
+        $expectedResult = new Message($messageType = bindec(substr($aisdata168[0], 0, 6)));
+
+        $result = $helper->decodeMessages($aisdata168);
+
+        // Erwartete Ausgabe (dies hängt von der Implementierung der DecoderClass ab)
+
+        // Vergleiche das tatsächliche Ergebnis mit dem erwarteten Ergebnis
+        $this->assertEquals($expectedResult, $result);
+    }
 
 
 }
