@@ -1,8 +1,11 @@
 <?php
 
 namespace Ais;
-use Exception;
 use Ais\Helper\Helper;
+use Exception;
+use Monolog\Logger;
+use Monolog\Handler\StreamHandler;
+
 
 error_reporting(E_ALL);
 
@@ -15,12 +18,20 @@ class DataFetcher {
     private $config;
 
 
-    public function __construct(Config $config, Logger $logger) {
+
+    private $helper;
+
+    private $redisData;
+
+
+    public function __construct(Config $config, Logger $logger, Helper $helper, RedisData $redisData) {
         $this->config = $config;
         $this->logger = $logger;
+        $this->helper = $helper;
+        $this->redisData = $redisData;
 
-        $this->ip = $config->get('ip');
-        $this->port = $config->get('port');
+        $this->ip = $this->config->get('ip');
+        $this->port = $this->config->get('port');
 
     }
 
@@ -30,10 +41,8 @@ class DataFetcher {
 
         if (!$sock){
             $errorMessage = "fsockopen() failed: error_code: $errno, error_message: $errstr";
-            $this->logger->log($errorMessage, 'error');
-            throw new Exception($errorMessage);
+            $this->logger->error($errorMessage);
         }
-
         return $sock;
     }
 
@@ -44,28 +53,30 @@ class DataFetcher {
             $sock = $this->connect();
             $data = [];
             $startTime = time();
-            $endTime = $startTime + 5;
+            $endTime = $startTime + 10;
             $readTimeout = 300;
             $decodedDataA = [];
             $incompleteMessage = '';
+            $combinedData = [];
 
             stream_set_timeout($sock, $readTimeout);
 
             $info = stream_get_meta_data($sock);
             if ($info['timed_out']) {
-                $this->logger->log('Timeout', 'error');
+                $this->logger->critical('Timeout');
                 throw new Exception('Timeout');
             }
 
+            $combinedData = [];
             while (time() < $endTime) {
 
                 $buffer = fread($sock, 1024);  //Problem: schneidet die letzen nachtichten ab
 
                 if (!$buffer) {
                     if (feof($sock)) {
-                        $this->logger->log('Verbindung geschlossen.', 'error');
+                        $this->logger->critical('Verbindung geschlossen.');
                     } else {
-                        $this->logger->log('Fehler beim Lesen vom Socket.', 'error');
+                        $this->logger->critical('Fehler beim Lesen vom Socket.');
                     }
                     break;
                 }
@@ -81,34 +92,54 @@ class DataFetcher {
                 }
 
                 $data = array_filter($data, 'strlen'); // Leere Zeilen aus den Nachrichten entfernen
-                $this->logger->log('Array von empfangenen Daten: ' . json_encode($data));
+                $this->logger->debug('Array von empfangenen Daten: ' . json_encode($data));
 
                 echo "Array von empfangenen Daten: ". PHP_EOL;
-                var_dump($data);
+                var_dump($data). PHP_EOL;
 
                 $decodedData = $this->sendDataToDecoder($data);
 
-                if (!empty($decodedData)) {
-                    foreach ($decodedData as $datum) {
-                        $decodedDataA[$datum->mmsi] = $datum;
-                        $this->logger->log("Dekodierte Nachricht: " . json_encode($datum), "");
-                        //var_dump($datum);
+
+                foreach ($decodedData as $datum) {
+                    $mmsi = trim($datum->mmsi);
+
+                    if (isset($combinedData[$mmsi])) {
+                        if (!empty($datum->name)) {
+                            $combinedData[$mmsi]->name = trim($datum->name);
+                        }
+                        if (!is_null($datum->longitude)) {
+                            $combinedData[$mmsi]->longitude = $datum->longitude;
+                        }
+                        if (!is_null($datum->latitude)) {
+                            $combinedData[$mmsi]->latitude = $datum->latitude;
+                        }
+                    } else {
+                        $combinedData[$mmsi] = $datum;
                     }
                 }
 
+//                if (!empty($decodedData)) {
+//                    foreach ($decodedData as $datum) {
+//                        $decodedDataA[$datum->mmsi] = $datum;
+//                        $this->logger->debug("Dekodierte Nachricht: " . json_encode($datum));
+//                        //var_dump($datum);
+//                    }
+               // var_dump($combinedData);
             }
 
-            fclose($sock);
-            $redis = new RedisData($this->config);
-            $redis->connect();
-            $redis->clear();
-            $redis->write($decodedDataA);
-            $test = $redis->read();
+            //$redis = new RedisData($this->config, $this->logger);
+            $this->redisData->connect();
+            $this->redisData->clear();
+            $this->redisData->write($combinedData);
+            $test = $this->redisData->read();
             var_dump($test);
-            $redis->close();
+            $this->redisData->close();
 
         } catch (Exception $e) {
-            $this->logger->log('Exception: ' . $e->getMessage(), 'error');
+            $this->logger->error('Exception: ' . $e->getMessage(), ['trace' => $e->getTrace()]);
+        }
+        finally {
+            fclose($sock);
         }
     }
 
@@ -118,19 +149,28 @@ class DataFetcher {
     {
 
         try {
-            $helper = new Helper();
-            $decodedData = $helper->decodeMessages($data);
+            //$helper = new Helper();
+            $decodedData = $this->helper->decodeMessages($data);
 
             if (empty($decodedData)) {
-                $this->logger->log('Keine dekodierten Daten vorhanden.', 'info');
+                $this->logger->error('Keine dekodierten Daten vorhanden.');
             }
 
             return $decodedData;
         } catch (Exception $e) {
-            $this->logger->log('Fehler beim Senden von Daten an den Decoder: ' . $e->getMessage(), 'error');
+            $this->logger->error('Fehler beim Senden von Daten an den Decoder: ' . $e->getMessage());
             return [];
         }
 
+    }
+
+    public function setIp($ip) {
+        $this->ip = $ip;
+    }
+
+    public function setPort($port)
+    {
+        $this->port = $port;
     }
 
 }

@@ -1,0 +1,16 @@
+{
+  "ip": "172.30.11.225",
+  "port": "31935",
+  "logFile": "logfile.txt",
+  "redis_ip": "127.0.0.1",
+  "redis_port" : "6379",
+
+  "logLevel_DEBUG" : 100,
+  "logLevel_INFO" : 200,
+  "logLevel_NOTICE" : 250,
+  "logLevel_WARNING" : 300,
+  "logLevel_ERROR" : 400,
+  "logLevel_CRITICAL" : 500,
+  "logLevel_ALERT" : 550,
+  "logLevel_EMERGENCY" : 600
+}

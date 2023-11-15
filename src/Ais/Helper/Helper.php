@@ -21,12 +21,12 @@ require_once('Message19.php');
 require_once('Message24.php');
 
 
-define('ERROR_MISSING_ASTERISK', -1);
-define('ERROR_INVALID_CHECKSUM_LENGTH', -2);
-define('ERROR_INVALID_NUMBER_OF_SEQUENCES', -3);
-define('ERROR_INVALID_SEQUENCE_NUMBER', -4);
-define('ERROR_INVALID_SEQUENCE_ORDER', -5);
-define('ERROR_INVALID_MULTIPART_MESSAGE', -6);
+//define('ERROR_MISSING_ASTERISK', -1);
+//define('ERROR_INVALID_CHECKSUM_LENGTH', -2);
+//define('ERROR_INVALID_NUMBER_OF_SEQUENCES', -3);
+//define('ERROR_INVALID_SEQUENCE_NUMBER', -4);
+//define('ERROR_INVALID_SEQUENCE_ORDER', -5);
+//define('ERROR_INVALID_MULTIPART_MESSAGE', -6);
 
 
 /**
@@ -234,7 +234,7 @@ class Helper
                     break;
                 default:
 
-                    echo "Unerkannte Nachricht von dem Typ $messageType: ".$this->createAisMessage($bits).PHP_EOL ;
+                    echo "Unerkannte Nachricht vom Typ $messageType: ".$this->createAisMessage($bits).'<br>'.PHP_EOL ;
 
                     break;
             }

@@ -21,6 +21,7 @@ class Logger
             error_log('Fehler beim Loggen: ' . $e->getMessage(), 0);
         }
     }
+
 }
 
 

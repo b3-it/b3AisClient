@@ -6,6 +6,9 @@
 namespace Ais;
 
 use Exception;
+use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
+require_once  __DIR__ . '/../../vendor/autoload.php';
 error_reporting(E_ALL);
 spl_autoload_register( function ($class) {
     // replace namespace separators with directory separators in the relative
@@ -23,11 +26,11 @@ spl_autoload_register( function ($class) {
 
 
 try {
-    $config = new Config("config.json");
-    $redis = new RedisData($config);
-    $redis->connect();
-    $aisData = $redis->read(true);
-    $redis->close();
+    $config = new Config('config/config.json');
+    $redisData = new RedisData($config);
+    $redisData->connect();
+    $aisData = $redisData->read(true);
+    $redisData->close();
 
     if (empty($aisData)) {
         echo "Keine Daten in Redis gefunden." . PHP_EOL;
