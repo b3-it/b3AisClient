@@ -52,7 +52,6 @@ try {
         }
     }
 
-
     } catch (Exception $e) {
         echo "Fehler beim Verbinden und Empfangen von Daten: " . $e->getMessage();
     }

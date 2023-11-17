@@ -48,15 +48,20 @@ try {
 
 
 
-//    $ip = $config->get('ip');
-//    $port = $config->get('port');
-    $dataFetcher = new DataFetcher($config, $logger, $helper, $redisData);
+    $ip = $config->get('ip');
+    $port = $config->get('port');
+
+    $dataFetcher = new DataFetcher($logger, $helper, $redisData);
+    $dataFetcher->setIp($ip);
+    $dataFetcher->setPort($port);
     $dataFetcher->fetchAndSendToRedis();
 
 
 } catch (Exception $e) {
     echo "Fehler beim Verbinden und Empfangen von Daten: " . $e->getMessage();
 }
+        //TODO: Encode funktioniert bisschen schief, testen -> weil channel direkt zugewiesen wird
+
 
 ?>
 

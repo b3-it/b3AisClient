@@ -15,7 +15,7 @@ class DataFetcher {
     private $port;
 
     private $logger;
-    private $config;
+
 
 
 
@@ -24,14 +24,12 @@ class DataFetcher {
     private $redisData;
 
 
-    public function __construct(Config $config, Logger $logger, Helper $helper, RedisData $redisData) {
-        $this->config = $config;
+    public function __construct(Logger $logger, Helper $helper, RedisData $redisData) {
+
         $this->logger = $logger;
         $this->helper = $helper;
         $this->redisData = $redisData;
 
-        $this->ip = $this->config->get('ip');
-        $this->port = $this->config->get('port');
 
     }
 
@@ -53,11 +51,10 @@ class DataFetcher {
             $sock = $this->connect();
             $data = [];
             $startTime = time();
-            $endTime = $startTime + 10;
+            $endTime = $startTime + 50;
             $readTimeout = 300;
-            $decodedDataA = [];
             $incompleteMessage = '';
-            $combinedData = [];
+            //$combinedData = [];
 
             stream_set_timeout($sock, $readTimeout);
 
@@ -94,6 +91,7 @@ class DataFetcher {
                 $data = array_filter($data, 'strlen'); // Leere Zeilen aus den Nachrichten entfernen
                 $this->logger->debug('Array von empfangenen Daten: ' . json_encode($data));
 
+
                 echo "Array von empfangenen Daten: ". PHP_EOL;
                 var_dump($data). PHP_EOL;
 
@@ -105,7 +103,8 @@ class DataFetcher {
 
                     if (isset($combinedData[$mmsi])) {
                         if (!empty($datum->name)) {
-                            $combinedData[$mmsi]->name = trim($datum->name);
+                            $cleanedName = $this->clearShipsName($datum->name);
+                            $combinedData[$mmsi]->name =  trim($cleanedName);
                         }
                         if (!is_null($datum->longitude)) {
                             $combinedData[$mmsi]->longitude = $datum->longitude;
@@ -150,6 +149,12 @@ class DataFetcher {
 
         try {
             //$helper = new Helper();
+//            $channels = [];
+//            foreach ($data as $datum){
+//                $dataParts = explode(",", $datum);
+//                $channels = $dataParts[3];
+//            }
+
             $decodedData = $this->helper->decodeMessages($data);
 
             if (empty($decodedData)) {
@@ -171,6 +176,14 @@ class DataFetcher {
     public function setPort($port)
     {
         $this->port = $port;
+    }
+
+    function clearShipsName($name)
+    {
+        if (strpos($name, "@") !== false && !empty($name)) {
+            return str_replace("@", "", $name);
+        }
+        return $name;
     }
 
 }

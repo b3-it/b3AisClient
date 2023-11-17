@@ -213,7 +213,7 @@ class Helper
         foreach ($bitsArray as $bits){
             $messageType = bindec(substr($bits, 0, 6));
             $message = null;
-            $i++;
+
             switch ($messageType) {
                 case 1:
                 case 2:
@@ -233,8 +233,12 @@ class Helper
                     $message = new Message24($messageType);
                     break;
                 default:
-
-                    echo "Unerkannte Nachricht vom Typ $messageType: ".$this->createAisMessage($bits).'<br>'.PHP_EOL ;
+                    //if (isset($channel[$i])) {
+                        //$unknownMessage = $bits;
+//                        echo "Unerkannte Nachricht vom Typ $messageType: " . htmlspecialchars($this->createAisMessage($bits, $channels[$i])) . '<br>' . PHP_EOL;
+//
+//                    break;
+                    echo "Unerkannte Nachricht vom Typ $messageType: ". htmlspecialchars($this->createAisMessage($bits)). '<br>'.PHP_EOL ;
 
                     break;
             }
@@ -243,6 +247,9 @@ class Helper
                 $decodedMessage = $message->decode($bits);
                 $decodedMessages[] = $decodedMessage;
             }
+            $i++;
+
+
         }
 
         return $decodedMessages;
@@ -685,7 +692,7 @@ class Helper
      * @param string $aisChannel - Der AIS-Kanal (optional, Standard: 'A')
      * @return string - Die erzeugte AIS-Nachricht
      */
-    function createAisMessage($encodedData, $messagePart = 1, $totalParts = 1, $sequenceNumber = '', $aisChannel = 'A') {
+    function createAisMessage($encodedData, $aisChannel = 'A',  $messagePart = 1, $totalParts = 1, $sequenceNumber = '' ) {
         $bitLength = strlen($encodedData);
         $remainingBits = $bitLength % 6;
         $paddingLength = ($remainingBits > 0) ? 6 - $remainingBits : 0;
@@ -713,7 +720,7 @@ class Helper
         $msb = (($checksum & 0xF0) >> 4) & 0x0F;
         $msbHex = ($msb >=0 && $msb <= 15) ? $hexArray[$msb] : '0';
 
-        $finalAisMessage = '!'.$ituMessage."*{$msbHex}{$lsbHex}\r\n";
+        $finalAisMessage = '!'.$ituMessage."*{$msbHex}{$lsbHex}";
 
         // Entfernen der Padding-Bits vor der Rückgabe der Nachricht
         return $finalAisMessage;

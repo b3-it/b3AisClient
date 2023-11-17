@@ -267,4 +267,13 @@ class HelperTest extends TestCase
     }
 
 
+    public function testCreateAisMessage(){
+        $helper = new Helper();
+        $bits = "001000000011001001011010100000000010000000110010000010100000000000000000000000000000000000000000000000000000011101110000101111101111101000000101000000000000000000000000";
+        $expectedResult = "!AIVDM,1,1,,A,839JP20j2P00000000Mhgg`50000,0*74\r\n";
+        $result = $helper->createAisMessage($bits);
+        $this->assertEquals($expectedResult,$result);
+    }
+
+
 }

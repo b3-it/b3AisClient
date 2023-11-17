@@ -31,7 +31,6 @@ try {
     $config = new Config('config.json');
     $logger = new Logger('log.txt');
 
-
     $ip = $config->get('ip');
     $port = $config->get('port');
 

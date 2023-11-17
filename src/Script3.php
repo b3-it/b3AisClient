@@ -38,12 +38,12 @@ try {
     $helper = new Helper();
 
 
-    $ips = $config->get('ips');
+    $hosts = $config->get('hosts');
 
     // Array zum Speichern von Prozess-IDss
     $pids = [];
 
-    foreach ($ips as $ip) {
+    foreach ($hosts as $host) {
         // Fork
         $pid = pcntl_fork();
 
@@ -55,14 +55,17 @@ try {
             $pids[] = $pid;
         } else {
             // Kindprozess
-            $logger = new Logger("my_logger");
-            $redisData = new RedisData($config);
-            $logLevel = ($config->get('logLevel_DEBUG')) ?? Logger::INFO;
-            $logger->pushHandler(new StreamHandler('logs/log_' . $ip . '.txt', $logLevel)); // DEBUG, INFO, NOTICE, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY
+            $ip = $host['ip'];
+            $port = $host ['port'];
 
-            $dataFetcher = new DataFetcher($config, $logger, $helper, $redisData);
-            $dataFetcher->setIp($ip);  // IP für den aktuellen Prozess festlegen
-            //unterschiedliche Ports?
+            $logger = new Logger("my_logger");
+            $redisData = new RedisData3($config, $ip);
+            $logLevel = ($config->get('logLevel_DEBUG')) ?? Logger::INFO;
+            $logger->pushHandler(new StreamHandler('logs/log_' . $ip . '_' . $port . '.txt', $logLevel)); // DEBUG, INFO, NOTICE, WARNING, ERROR, CRITICAL, ALERT, EMERGENCY
+
+            $dataFetcher = new DataFetcher3($logger, $helper, $redisData);
+            $dataFetcher->setIp($ip);  // IP ind Port für den aktuellen Prozess festlegen
+            $dataFetcher->setPort($port);
             $dataFetcher->fetchAndSendToRedis();
 
             exit();

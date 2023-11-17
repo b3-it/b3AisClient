@@ -59,7 +59,7 @@ class Message extends Helper
         $res['latitude']  = $this->latitude ;
 
         $res['receivedTimestamp']  = $this->receivedTimestamp;
-        $res['messageType']  = $this->messageType;
+        //$res['messageType']  = $this->messageType;
         $res['mmsi']  = $this->mmsi;
 
 //        $res['destinaton']  = $this->destinaton;
