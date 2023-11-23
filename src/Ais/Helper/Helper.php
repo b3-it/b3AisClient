@@ -234,11 +234,10 @@ class Helper
                     break;
                 default:
                     //if (isset($channel[$i])) {
-                        //$unknownMessage = $bits;
-//                        echo "Unerkannte Nachricht vom Typ $messageType: " . htmlspecialchars($this->createAisMessage($bits, $channels[$i])) . '<br>' . PHP_EOL;
-//
-//                    break;
-                    echo "Unerkannte Nachricht vom Typ $messageType: ". htmlspecialchars($this->createAisMessage($bits)). '<br>'.PHP_EOL ;
+                    //$unknownMessage = $bits;
+                    //echo "Unerkannte Nachricht vom Typ $messageType: " . htmlspecialchars($this->createAisMessage($bits, $channels[$i])) . '<br>' . PHP_EOL;
+                    // break;
+                    //echo "Unerkannte Nachricht vom Typ $messageType: ". htmlspecialchars($this->createAisMessage($bits)). '<br>'.PHP_EOL ;
 
                     break;
             }
@@ -247,7 +246,6 @@ class Helper
                 $decodedMessage = $message->decode($bits);
                 $decodedMessages[] = $decodedMessage;
             }
-            $i++;
 
 
         }

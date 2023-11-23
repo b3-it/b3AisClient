@@ -26,12 +26,12 @@ spl_autoload_register( function ($class) {
 
 
 try {
-    $config = new Config('config/config.json');
-    $redisData = new RedisData($config);
+    $config = new Config(__DIR__ . "/../config/config.json" );
+    $redisData = new RedisData($config, $config->get('port'));
     $redisData->connect();
+
     $aisData = $redisData->read(true);
     $redisData->close();
-
     if (empty($aisData)) {
         echo "Keine Daten in Redis gefunden." . PHP_EOL;
     } else {
@@ -39,7 +39,7 @@ try {
         foreach ($aisData as $data) {
             echo var_dump($data) . PHP_EOL;
         }
-
+        echo $redisData->getDataKey() . "<br>";
         $i = 0;
         foreach ($aisData as $data) {
             $lat = $data->latitude;

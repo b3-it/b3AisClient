@@ -16,9 +16,6 @@ class DataFetcher {
 
     private $logger;
 
-
-
-
     private $helper;
 
     private $redisData;
@@ -51,10 +48,9 @@ class DataFetcher {
             $sock = $this->connect();
             $data = [];
             $startTime = time();
-            $endTime = $startTime + 50;
+            $endTime = $startTime + 10;
             $readTimeout = 300;
             $incompleteMessage = '';
-            //$combinedData = [];
 
             stream_set_timeout($sock, $readTimeout);
 
@@ -92,8 +88,8 @@ class DataFetcher {
                 $this->logger->debug('Array von empfangenen Daten: ' . json_encode($data));
 
 
-                echo "Array von empfangenen Daten: ". PHP_EOL;
-                var_dump($data). PHP_EOL;
+                //echo "Array von empfangenen Daten: ". PHP_EOL;
+                //var_dump($data). PHP_EOL;
 
                 $decodedData = $this->sendDataToDecoder($data);
 
@@ -116,23 +112,13 @@ class DataFetcher {
                         $combinedData[$mmsi] = $datum;
                     }
                 }
-
-//                if (!empty($decodedData)) {
-//                    foreach ($decodedData as $datum) {
-//                        $decodedDataA[$datum->mmsi] = $datum;
-//                        $this->logger->debug("Dekodierte Nachricht: " . json_encode($datum));
-//                        //var_dump($datum);
-//                    }
-               // var_dump($combinedData);
             }
-
-            //$redis = new RedisData($this->config, $this->logger);
+            $this->logMessage("Lesevorgang abgeschlossen, schreibe Daten in Redis...");
             $this->redisData->connect();
             $this->redisData->clear();
             $this->redisData->write($combinedData);
-            $test = $this->redisData->read();
-            var_dump($test);
             $this->redisData->close();
+            $this->logMessage("OK!");
 
         } catch (Exception $e) {
             $this->logger->error('Exception: ' . $e->getMessage(), ['trace' => $e->getTrace()]);
@@ -148,12 +134,6 @@ class DataFetcher {
     {
 
         try {
-            //$helper = new Helper();
-//            $channels = [];
-//            foreach ($data as $datum){
-//                $dataParts = explode(",", $datum);
-//                $channels = $dataParts[3];
-//            }
 
             $decodedData = $this->helper->decodeMessages($data);
 
@@ -184,6 +164,12 @@ class DataFetcher {
             return str_replace("@", "", $name);
         }
         return $name;
+    }
+
+    public function logMessage(string $message){
+        $log = new Logger('test');
+        $log->pushHandler(new StreamHandler('php://stdout', Logger::INFO));
+        $log->info($message);
     }
 
 }

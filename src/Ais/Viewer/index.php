@@ -54,11 +54,31 @@ echo '
 //  featureList[1] = {'lon' : 9.1503416666667,'lat': 53.892906666667, 'name':'','mmsi':'244129905'};
 //  featureList[2] = {'lon' : 9.1441183333333,'lat': 53.893051666667, 'name':'','mmsi':'209543000'};
 //  featureList[3] = {'lon' : 9.1511666666667,'lat': 53.893463333333, 'name':'','mmsi':'244700462'};
-$config = new Config('config.json');
-$redis = new RedisData($config);
+$config = new Config(__DIR__ . "/../../config/config.json");
+
+/*
+$redis = new RedisData($config, $config->get('port'));
 $redis->connect();
 $aisData = $redis->read(true);
 $redis->close();
+*/
+
+$redis31935 = new RedisData3($config, 31935);
+$redis31935->connect();
+$aisDataBrunsbuettel = $redis31935->read(true);
+$redis31935->close();
+
+$redis31936 = new RedisData3($config, 31936);
+$redis31936->connect();
+$aisDataKiel = $redis31936->read(true);
+$redis31936->close();
+
+$redis31937 = new RedisData3($config, 31937);
+$redis31937->connect();
+$aisDataGieselau = $redis31937->read(true);
+$redis31937->close();
+
+$aisData = array_merge($aisDataBrunsbuettel, $aisDataKiel, $aisDataGieselau);
 
 if (empty($aisData)) {
     echo "Keine Daten in Redis gefunden." . PHP_EOL;

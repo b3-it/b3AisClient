@@ -15,11 +15,11 @@ class RedisData3
     protected $config;
     protected $_redis = null;
 
-    protected $host_ip;
+    protected $host_port;
 
-    public function __construct(Config $config, $host_ip)
+    public function __construct(Config $config, $host_port)
     {
-        $this->host_ip = $host_ip;
+        $this->host_port = $host_port;
 
         $this->redis_ip = $config->get('redis_ip') ?? '127.0.0.1';
         $this->redis_port = $config->get('redis_port') ?? 6379;
@@ -95,7 +95,7 @@ class RedisData3
     }
 
     protected function getDataKey(){
-        return $this->data_key_prefix . $this->host_ip;
+        return $this->data_key_prefix . $this->host_port;
     }
 
 

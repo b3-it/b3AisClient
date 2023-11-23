@@ -2,20 +2,28 @@
 
 namespace Ais;
 
+
 class RedisData
 {
-    protected $_ip;
-    protected $_port;
+    protected $redis_ip;
+    protected $redis_port;
 
-    protected $data_key = 'ais_data';
-    //key + port von der schleuse
+    protected $data_key = 'ais_data_';
+
 
     protected $_redis = null;
 
-    public function __construct(Config $config)
+    protected $config;
+
+    protected $host_port;
+
+    public function __construct(Config $config, $port)
     {
-        $this->_ip = $config->get('redis_ip') ?? '127.0.0.1';
-        $this->_port = $config->get('redis_port') ?? 6379;
+
+        $this->host_port = $port;
+        $this->redis_ip = $config->get('redis_ip') ?? '127.0.0.1';
+        $this->redis_port = $config->get('redis_port') ?? 6379;
+        $this->data_key = $this->data_key.$port;
     }
 
     public function connect()
@@ -23,7 +31,7 @@ class RedisData
         try {
             $this->_redis = new \Redis();
             if ($this->_redis == null) {
-                $this->_redis->connect($this->_ip, $this->_port);
+                $this->_redis->connect($this->redis_ip, $this->redis_port);
             }
         } catch (\Exception $e) {
             throw new \Exception('Fehler beim Verbinden mit Redis: ' . $e->getMessage());
@@ -86,6 +94,13 @@ class RedisData
             throw new \Exception('Fehler beim Lesen von Daten aus Redis: ' . $e->getMessage());
         }
     }
+
+    //key + Port von der Schleuse
+    public function getDataKey(){
+        return $this->data_key;
+    }
+
+
 
 
 }
