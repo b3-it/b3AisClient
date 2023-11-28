@@ -16,27 +16,17 @@ class Message extends Helper
 {
 
     //public $channel = 0; Indikator für nicht dekodierte Nachricht, AIS-Klasse nicht definiert
-    public $name = '';                // Name des Schiffs oder der Einrichtung
+    public $name = '';
+
+   // Name des Schiffs oder der Einrichtung
     public $speedOverGround;
     public $courseOverGround;
     public $longitude ;
     public $latitude;
-
     public $timestamp;                // Zeitstempel der Nachricht
     public $messageType;              // ID des Nachrichtentyps
     public $mmsi;                     // Maritime Mobile Service Identity (MMSI) des Senders
-
     public $receivedTimestamp;
-
-
-
-//    public $destinaton;
-
-//    public $ETAmonth;
-//    public $ETAday;
-//    public $ETAhour;
-//    public $ETAminute;
-
 
 
     public function __construct($messageType)
@@ -53,22 +43,14 @@ class Message extends Helper
     {
         $res = [];
         $res['name']  = $this->name;
-//        $res['speedOverGround'] =  $this->speedOverGround;
-//        $res['courseOverGround']  = $this->courseOverGround ;
         $res['longitude']  = $this->longitude;
         $res['latitude']  = $this->latitude ;
 
         $res['receivedTimestamp']  = $this->receivedTimestamp;
-        //$res['messageType']  = $this->messageType;
         $res['mmsi']  = $this->mmsi;
 
-//        $res['destinaton']  = $this->destinaton;
-
-//        $res['ETAmonth']  = $this->ETAmonth;
-//        $res['ETAday']  = $this->ETAday;
-//        $res['ETAhour']  = $this->ETAhour;
-//        $res['ETAminute']  = $this->ETAminute;
 
         return json_encode($res);
     }
+
 }

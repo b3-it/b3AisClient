@@ -21,8 +21,6 @@ class Message123 extends Message
     {
 
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
-//        $this->courseOverGround = bindec(substr($aisdata168, 116, 12)) / 10;
-//        $this->speedOverGround = bindec(substr($aisdata168, 50, 10)) / 10;
         $this->longitude = $this->convertToLongitude(bindec(substr($aisdata168, 61, 28)));
         $this->latitude = $this->convertToLatitude(bindec(substr($aisdata168, 89, 27)));
         $this->receivedTimestamp = time();

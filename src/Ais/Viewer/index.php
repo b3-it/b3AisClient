@@ -2,7 +2,6 @@
 
 namespace Ais;
 
-use Exception;
 error_reporting(E_ALL);
 spl_autoload_register( function ($class) {
     // replace namespace separators with directory separators in the relative
@@ -63,17 +62,17 @@ $aisData = $redis->read(true);
 $redis->close();
 */
 
-$redis31935 = new RedisData3($config, 31935);
+$redis31935 = new RedisData($config, 31935);
 $redis31935->connect();
 $aisDataBrunsbuettel = $redis31935->read(true);
 $redis31935->close();
 
-$redis31936 = new RedisData3($config, 31936);
+$redis31936 = new RedisData($config, 31936);
 $redis31936->connect();
 $aisDataKiel = $redis31936->read(true);
 $redis31936->close();
 
-$redis31937 = new RedisData3($config, 31937);
+$redis31937 = new RedisData($config, 31937);
 $redis31937->connect();
 $aisDataGieselau = $redis31937->read(true);
 $redis31937->close();

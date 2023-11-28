@@ -2,16 +2,7 @@
 
 namespace Ais\Helper;
 
-use Ais\Helper\Message;
-use Ais\Helper\Message123;
-use Ais\Helper\Message18;
-use Ais\Helper\Message19;
-use Ais\Helper\Message24;
-use Ais\Helper\Message5;
-
 use Exception;
-use function PHPUnit\Framework\exactly;
-
 
 require_once('Message.php');
 require_once('Message123.php');
@@ -20,13 +11,6 @@ require_once('Message18.php');
 require_once('Message19.php');
 require_once('Message24.php');
 
-
-//define('ERROR_MISSING_ASTERISK', -1);
-//define('ERROR_INVALID_CHECKSUM_LENGTH', -2);
-//define('ERROR_INVALID_NUMBER_OF_SEQUENCES', -3);
-//define('ERROR_INVALID_SEQUENCE_NUMBER', -4);
-//define('ERROR_INVALID_SEQUENCE_ORDER', -5);
-//define('ERROR_INVALID_MULTIPART_MESSAGE', -6);
 
 
 /**
@@ -233,12 +217,6 @@ class Helper
                     $message = new Message24($messageType);
                     break;
                 default:
-                    //if (isset($channel[$i])) {
-                    //$unknownMessage = $bits;
-                    //echo "Unerkannte Nachricht vom Typ $messageType: " . htmlspecialchars($this->createAisMessage($bits, $channels[$i])) . '<br>' . PHP_EOL;
-                    // break;
-                    //echo "Unerkannte Nachricht vom Typ $messageType: ". htmlspecialchars($this->createAisMessage($bits)). '<br>'.PHP_EOL ;
-
                     break;
             }
 

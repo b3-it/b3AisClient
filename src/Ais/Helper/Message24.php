@@ -19,17 +19,11 @@ class Message24 extends Message
     public function decode($aisdata168)
     {
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
-        //        $partNumber = bindec(substr($aisdata168, 38, 2));
         $this->name = $this->convertBinaryToAISChars($aisdata168, 90, 42);
         $this->receivedTimestamp = time();
 
         return $this;
 
-        //        if ($partNumber == 0) {
-        //            $this->channel = "A"; //Class B
-        //        } else {
-        //            $this->channel = "B"; // Class B
-        //        }
     }
 
     function printObject()

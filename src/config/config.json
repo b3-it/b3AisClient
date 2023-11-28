@@ -4,12 +4,17 @@
   "redis_ip": "127.0.0.1",
   "redis_port" : "6379",
 
-  "logLevel_DEBUG" : 100,
-  "logLevel_INFO" : 200,
-  "logLevel_NOTICE" : 250,
-  "logLevel_WARNING" : 300,
-  "logLevel_ERROR" : 400,
-  "logLevel_CRITICAL" : 500,
-  "logLevel_ALERT" : 550,
-  "logLevel_EMERGENCY" : 600
+
+  "logLevel" : 100,
+
+  "_comments_logLevels": {
+    "DEBUG": 100,
+    "INFO": 200,
+    "NOTICE": 250,
+    "WARNING": 300,
+    "ERROR": 400,
+    "CRITICAL": 500,
+    "ALERT": 550,
+    "EMERGENCY": 600
+  }
 }

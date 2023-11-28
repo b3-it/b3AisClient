@@ -26,17 +26,38 @@ class DataFetcher {
         $this->logger = $logger;
         $this->helper = $helper;
         $this->redisData = $redisData;
-
-
     }
 
     public function connect(){
+
+        $allowedList = [
+            '172.30.11.225' => [31935, 31936,31937],
+            '172.30.21.225' => [31935, 31936,31937],
+            '172.30.31.225' => [31935, 31936,31937],
+        ];
+
+        if(!$this->validateIpAndPort($this->ip, $this->port, $allowedList)){
+            $this->logMessageCLI("Ungültige IP und Port-Kombination", Logger::CRITICAL);
+            throw new Exception("Ungültige IP und Port-Kombination");
+        }else{
+            $this->logMessageCLI("Baue den Tunnel auf : IP: $this->ip, Port: $this->port", Logger::INFO);
+        }
+        //$this->validateIpAndPort($this->ip, $this->port, $allowedList);
+
+        if (!filter_var($this->ip, FILTER_VALIDATE_IP)) {
+            $errorMessage = "Ungültige IP-Adresse: " . $this->ip;
+            $this->logger->error($errorMessage);
+            throw new Exception($errorMessage);
+        }
 
         $sock = fsockopen($this->ip,$this->port, $errno, $errstr, 5);
 
         if (!$sock){
             $errorMessage = "fsockopen() failed: error_code: $errno, error_message: $errstr";
             $this->logger->error($errorMessage);
+            throw new Exception($errorMessage);
+        }else{
+            $this->logMessageCLI("Verbindung erfolgreich hergestellt. Lese die Daten ein...", Logger::INFO);
         }
         return $sock;
     }
@@ -45,6 +66,7 @@ class DataFetcher {
     public function fetchAndSendToRedis()
     {
         try {
+
             $sock = $this->connect();
             $data = [];
             $startTime = time();
@@ -63,7 +85,7 @@ class DataFetcher {
             $combinedData = [];
             while (time() < $endTime) {
 
-                $buffer = fread($sock, 1024);  //Problem: schneidet die letzen nachtichten ab
+                $buffer = fread($sock, 1024);
 
                 if (!$buffer) {
                     if (feof($sock)) {
@@ -86,7 +108,6 @@ class DataFetcher {
 
                 $data = array_filter($data, 'strlen'); // Leere Zeilen aus den Nachrichten entfernen
                 $this->logger->debug('Array von empfangenen Daten: ' . json_encode($data));
-
 
                 //echo "Array von empfangenen Daten: ". PHP_EOL;
                 //var_dump($data). PHP_EOL;
@@ -113,22 +134,17 @@ class DataFetcher {
                     }
                 }
             }
-            $this->logMessage("Lesevorgang abgeschlossen, schreibe Daten in Redis...");
+            $this->logMessageCLI("Lesevorgang abgeschlossen, schreibe Daten in Redis...", Logger::INFO);
             $this->redisData->connect();
             $this->redisData->clear();
             $this->redisData->write($combinedData);
             $this->redisData->close();
-            $this->logMessage("OK!");
+            $this->logMessageCLI("OK!", Logger::INFO);
 
         } catch (Exception $e) {
             $this->logger->error('Exception: ' . $e->getMessage(), ['trace' => $e->getTrace()]);
         }
-        finally {
-            fclose($sock);
-        }
     }
-
-
 
     function sendDataToDecoder(array $data)
     {
@@ -166,10 +182,32 @@ class DataFetcher {
         return $name;
     }
 
-    public function logMessage(string $message){
-        $log = new Logger('test');
-        $log->pushHandler(new StreamHandler('php://stdout', Logger::INFO));
-        $log->info($message);
+    public function logMessageCLI(string $message, $logLevel){
+        $log = new Logger('cli');
+        $streamHandler = new StreamHandler('php://stdout');
+        $streamHandler->setLevel($logLevel);
+        $log->pushHandler($streamHandler);
+
+        switch ($logLevel){
+            case Logger::INFO:
+                $log->info($message);
+                break;
+            case Logger::CRITICAL:
+                $log->critical($message);
+                break;
+            default:
+                break;
+        }
+
+    }
+
+    public function validateIpAndPort($ip, $port, $allowedList)
+    {
+        // Überprüfen, ob die Kombination von IP und Port in der Liste enthalten ist
+        if (!isset($allowedList[$ip]) || !in_array($port, $allowedList[$ip])) {
+            return false;
+        }
+        return true;
     }
 
 }

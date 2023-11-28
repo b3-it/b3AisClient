@@ -2,19 +2,19 @@
 
 namespace Ais;
 
+use Psr\Log\LogLevel;
 
 class RedisData
 {
     protected $redis_ip;
     protected $redis_port;
 
-    protected $data_key = 'ais_data_';
+    protected $data_key_prefix = 'ais_data_';
 
 
     protected $_redis = null;
 
     protected $config;
-
     protected $host_port;
 
     public function __construct(Config $config, $port)
@@ -23,7 +23,7 @@ class RedisData
         $this->host_port = $port;
         $this->redis_ip = $config->get('redis_ip') ?? '127.0.0.1';
         $this->redis_port = $config->get('redis_port') ?? 6379;
-        $this->data_key = $this->data_key.$port;
+        //$this->data_key = $this->data_key.$port;
     }
 
     public function connect()
@@ -42,7 +42,7 @@ class RedisData
     {
         try {
             if ($this->_redis != null) {
-                $this->_redis->del($this->data_key);
+                $this->_redis->del($this->getDataKey());
             }
         } catch (\Exception $e) {
             throw new \Exception('Fehler beim Löschen von Daten in Redis: '. $e->getMessage());
@@ -66,10 +66,10 @@ class RedisData
         try {
             if (is_array($data)) {
                 foreach ($data as $d) {
-                    $this->_redis->rpush($this->data_key, $d->getEncodeData());
+                    $this->_redis->rpush($this->getDataKey(), $d->getEncodeData());
                 }
             } else {
-                $this->_redis->rpush($this->data_key, $data->getEncodeData());
+                $this->_redis->rpush($this->getDataKey(), $data->getEncodeData());
             }
         } catch (\Exception $e) {
             throw new \Exception('Fehler beim Schreiben von Daten in Redis: ' . $e->getMessage());
@@ -78,7 +78,7 @@ class RedisData
 
     public function read($asObjects = false){
         try {
-            $aisData = $this->_redis->lrange($this->data_key, 0, -1);
+            $aisData = $this->_redis->lrange($this->getDataKey(), 0, -1);
 
             if ($asObjects) {
                 $tmp = [];
@@ -97,7 +97,7 @@ class RedisData
 
     //key + Port von der Schleuse
     public function getDataKey(){
-        return $this->data_key;
+        return $this->data_key_prefix . $this->host_port;
     }
 
 
