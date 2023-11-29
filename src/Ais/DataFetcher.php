@@ -9,7 +9,15 @@ use Monolog\Handler\StreamHandler;
 
 error_reporting(E_ALL);
 
-// Schreibprozess (Daten sammeln und in Redis schreiben):
+/**
+ * Class DataFetcher
+ *
+ * Die Klasse DataFetcher ist verantwortlich für den Schreibprozess, bei dem Daten gesammelt und in Redis geschrieben werden.
+ * Sie stellt Methoden zum Herstellen der Verbindung, Lesen von Daten vom Socket, Dekodieren der AIS-Nachrichten und Schreiben
+ * der kombinierten Daten in Redis zur Verfügung.
+ *
+ * @package Ais
+ */
 class DataFetcher {
     private $ip;
     private $port;
@@ -20,7 +28,13 @@ class DataFetcher {
 
     private $redisData;
 
-
+    /**
+     * Konstruktor der Klasse.
+     *
+     * @param Logger $logger Das Logger-Objekt zur Protokollierung von Ereignissen.
+     * @param Helper $helper Das Helper-Objekt für Hilfsfunktionen.
+     * @param RedisData $redisData Das RedisData-Objekt zur Kommunikation mit Redis.
+     */
     public function __construct(Logger $logger, Helper $helper, RedisData $redisData) {
 
         $this->logger = $logger;
@@ -28,27 +42,26 @@ class DataFetcher {
         $this->redisData = $redisData;
     }
 
+    /**
+     * Stellt eine Verbindung zum Socket her und prüft ob IP gültig ist.
+     *
+     * @return resource Die Socket-Verbindung.
+     * @throws Exception Wenn ein Fehler bei der Verbindung oder Validierung auftritt.
+     */
     public function connect(){
-
-        $allowedList = [
-            '172.30.11.225' => [31935, 31936,31937],
-            '172.30.21.225' => [31935, 31936,31937],
-            '172.30.31.225' => [31935, 31936,31937],
-        ];
-
-        if(!$this->validateIpAndPort($this->ip, $this->port, $allowedList)){
-            $this->logMessageCLI("Ungültige IP und Port-Kombination", Logger::CRITICAL);
-            throw new Exception("Ungültige IP und Port-Kombination");
-        }else{
-            $this->logMessageCLI("Baue den Tunnel auf : IP: $this->ip, Port: $this->port", Logger::INFO);
-        }
-        //$this->validateIpAndPort($this->ip, $this->port, $allowedList);
 
         if (!filter_var($this->ip, FILTER_VALIDATE_IP)) {
             $errorMessage = "Ungültige IP-Adresse: " . $this->ip;
             $this->logger->error($errorMessage);
             throw new Exception($errorMessage);
+        } elseif (!filter_var($this->port, FILTER_VALIDATE_INT)) {
+            $errorMessage = "Ungültiger Port: " . $this->port;
+            $this->logger->error($errorMessage);
+            throw new Exception($errorMessage);
+        } else{
+            $this->logMessageCLI("Baue den Tunnel auf : IP: $this->ip, Port: $this->port", Logger::INFO);
         }
+
 
         $sock = fsockopen($this->ip,$this->port, $errno, $errstr, 5);
 
@@ -58,11 +71,16 @@ class DataFetcher {
             throw new Exception($errorMessage);
         }else{
             $this->logMessageCLI("Verbindung erfolgreich hergestellt. Lese die Daten ein...", Logger::INFO);
+
         }
         return $sock;
     }
 
-
+    /**
+     * Liest Daten vom Socket, dekodiert AIS-Nachrichten und schreibt die kombinierten Daten in Redis.
+     *
+     * @throws Exception Wenn ein Fehler beim Lesen, Dekodieren oder Schreiben in Redis auftritt.
+     */
     public function fetchAndSendToRedis()
     {
         try {
@@ -71,15 +89,16 @@ class DataFetcher {
             $data = [];
             $startTime = time();
             $endTime = $startTime + 10;
-            $readTimeout = 300;
-            $incompleteMessage = '';
+            $readTimeout = 180;
+            $incompleteMessage = ''; // Unvollständige Nachrichten, die im vorherigen Durchlauf empfangen wurden
 
             stream_set_timeout($sock, $readTimeout);
 
             $info = stream_get_meta_data($sock);
             if ($info['timed_out']) {
-                $this->logger->critical('Timeout');
-                throw new Exception('Timeout');
+                $loggingText = 'Timeout beim Lesem vom Socket.';
+                $this->logger->critical($loggingText);
+                throw new Exception($loggingText);
             }
 
             $combinedData = [];
@@ -100,8 +119,10 @@ class DataFetcher {
                 $buffer = $incompleteMessage . $buffer;
 
                 $data = explode("\n", $buffer);
+
                 $incompleteMessage = '';
 
+                // Falls die letzte Zeile nicht leer ist, handelt es sich um eine unvollständige Nachricht
                 if (end($data) !== '') {
                     $incompleteMessage = array_pop($data);
                 }
@@ -115,10 +136,12 @@ class DataFetcher {
                 $decodedData = $this->sendDataToDecoder($data);
 
 
+                // Nachrichten mit nur dem Schiffsnamen und solchen mit nur geografischen Daten kombinieren.
                 foreach ($decodedData as $datum) {
                     $mmsi = trim($datum->mmsi);
 
                     if (isset($combinedData[$mmsi])) {
+                        // Falls das Schiff bereits im kombinierten Array vorhanden ist, aktualisiere die Daten
                         if (!empty($datum->name)) {
                             $cleanedName = $this->clearShipsName($datum->name);
                             $combinedData[$mmsi]->name =  trim($cleanedName);
@@ -130,6 +153,7 @@ class DataFetcher {
                             $combinedData[$mmsi]->latitude = $datum->latitude;
                         }
                     } else {
+                        // Falls das Schiff nicht im kombinierten Array vorhanden ist, füge es hinzu
                         $combinedData[$mmsi] = $datum;
                     }
                 }
@@ -141,14 +165,22 @@ class DataFetcher {
             $this->redisData->close();
             $this->logMessageCLI("OK!", Logger::INFO);
 
+
+
         } catch (Exception $e) {
             $this->logger->error('Exception: ' . $e->getMessage(), ['trace' => $e->getTrace()]);
         }
     }
 
+    /**
+     * Sendet Daten an den Decoder und gibt die dekodierten Daten zurück.
+     *
+     * @param array $data Die zu sendenden Daten.
+     * @return array Die dekodierten Daten.
+     * @throws Exception Wenn ein Fehler beim Senden an den Decoder auftritt.
+     */
     function sendDataToDecoder(array $data)
     {
-
         try {
 
             $decodedData = $this->helper->decodeMessages($data);
@@ -174,6 +206,12 @@ class DataFetcher {
         $this->port = $port;
     }
 
+    /**
+     * Bereinigt den Namen des Schiffs.
+     *
+     * @param string $name Der zu bereinigende Name.
+     * @return string Der bereinigte Name.
+     */
     function clearShipsName($name)
     {
         if (strpos($name, "@") !== false && !empty($name)) {
@@ -182,7 +220,24 @@ class DataFetcher {
         return $name;
     }
 
+    /**
+     * Protokolliert eine CLI-Nachricht mit dem angegebenen Log-Level.
+     *
+     * @param string $message Die zu protokollierende Nachricht.
+     * @param mixed $logLevel Das Log-Level.
+     */
     public function logMessageCLI(string $message, $logLevel){
+
+        if(php_sapi_name() !== 'cli'){
+            $formattedMessage = sprintf(
+                '<p>[%s] %s</p>',
+                date('Y-m-d H:i:s'), // Zeitstempel
+                $message
+            );
+
+            echo $formattedMessage;
+        }
+
         $log = new Logger('cli');
         $streamHandler = new StreamHandler('php://stdout');
         $streamHandler->setLevel($logLevel);
@@ -201,14 +256,6 @@ class DataFetcher {
 
     }
 
-    public function validateIpAndPort($ip, $port, $allowedList)
-    {
-        // Überprüfen, ob die Kombination von IP und Port in der Liste enthalten ist
-        if (!isset($allowedList[$ip]) || !in_array($port, $allowedList[$ip])) {
-            return false;
-        }
-        return true;
-    }
 
 }
 

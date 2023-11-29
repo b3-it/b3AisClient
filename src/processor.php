@@ -32,7 +32,7 @@ spl_autoload_register( function ($class) {
 });
 
 try {
-
+    // Request-Handler erstellen und Argumente (IP, Port) einselen
     $requestHandler = new requestHandler();
     $requestHandler->parseArguments();
 
