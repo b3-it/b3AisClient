@@ -90,7 +90,7 @@ class DataFetcher {
             $data = [];
             $startTime = time();
             $endTime = $startTime + $this->config->get('request_duration_seconds');
-            $readTimeout = 180;
+            $readTimeout = 10;
             $incompleteMessage = ''; // Unvollständige Nachrichten, die im vorherigen Durchlauf empfangen wurden
             $redisIP = $this->redisData->getIP();
             $redisPort = $this->redisData->getPort();
@@ -110,17 +110,7 @@ class DataFetcher {
                 $buffer = fread($sock, 1024);
 
                 if (!$buffer) {
-                    if (feof($sock)) {
-                        $this->logger->critical('Verbindung geschlossen: Das Ende des Streams wurde erreicht oder IP/Port ist falsch.');
-                        throw new \Exception('Verbindung geschlossen: Das Ende des Streams wurde erreicht oder IP/Port ist falsch.');
-                    } else {
-                        $this->logger->critical('Fehler beim Lesen vom Socket: Der Buffer ist leer.');
-                        throw new \Exception('Fehler beim Lesen vom Socket: Der Buffer ist leer.');
-
-                        //exception ist falsch weil falsch aus einer schleuse keine daten ankommen wird ein exception geworfen, obwohl
-                        //gibt es bloß momenten keine schiffe, z.b in der gisela gibt es nie schieffe, und ein exception soll nicht
-                        //geworfen werden
-                    }
+                    continue;
                 }
 
                 //Falls die Nachricht unvollständig ankommt, weil der Buffer voll ist
