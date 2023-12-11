@@ -66,9 +66,5 @@ try {
 }
 
 
-    //TODO:
-    // 5) in alle Verzeichnisse eine geeignete .htaccess Datei legen die die Zugriffe auf ungewollte Dateien verbietet ?
-    // 7) es werden sowohl auf der Konsole als auch im Browser immer noch Meldungen ausgegeben. Die sollen ausschließlich ins Log-File ~ verbose
-
 
 
