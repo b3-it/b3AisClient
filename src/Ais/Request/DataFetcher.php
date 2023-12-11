@@ -61,7 +61,7 @@ class DataFetcher {
             $this->logger->error($errorMessage);
             throw new Exception($errorMessage);
         } else{
-            $this->logger->info("Baue den Tunnel auf : IP: $this->ip, Port: $this->port");
+            $this->logger->info("Baue die Verbindung auf : IP: $this->ip, Port: $this->port");
         }
 
 

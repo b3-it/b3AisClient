@@ -43,9 +43,8 @@ class RedisData
     {
         try {
             $this->_redis = new \Redis();
-            if ($this->_redis == null) {
-                $this->_redis->connect($this->redis_ip, $this->redis_port);
-            }
+            $this->_redis->connect($this->redis_ip, $this->redis_port);
+
         } catch (\Exception $e) {
             throw new \Exception('Fehler beim Verbinden mit Redis: ' . $e->getMessage());
         }
