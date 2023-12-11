@@ -68,16 +68,43 @@ $redis->close();
 $redis31935 = new RedisData($config, 31935);
 $redis31935->connect();
 $aisDataBrunsbuettel = $redis31935->read(true);
+
+echo "<h1> Brunsbüttel </h1>";
+foreach ($aisDataBrunsbuettel as $data) {
+    $lat = $data->latitude;
+    $long = $data->longitude;
+    $name = $data->name;
+    $mmsi = $data->mmsi;
+    echo 'lon: '. $long . ' lat: '.  $lat.  ' name: '. $name. ' mmsi: '. $mmsi. "<br>". PHP_EOL;
+}
+
+
 $redis31935->close();
 
 $redis31936 = new RedisData($config, 31936);
 $redis31936->connect();
 $aisDataKiel = $redis31936->read(true);
+echo "<h1> Kiel </h1>";
+foreach ($aisDataKiel as $data) {
+    $lat = $data->latitude;
+    $long = $data->longitude;
+    $name = $data->name;
+    $mmsi = $data->mmsi;
+    echo 'lon: '. $long . ' lat: '.  $lat.  ' name: '. $name. ' mmsi: '. $mmsi. "<br>". PHP_EOL;
+}
 $redis31936->close();
 
 $redis31937 = new RedisData($config, 31937);
 $redis31937->connect();
 $aisDataGieselau = $redis31937->read(true);
+echo "<h1> Giselau </h1>";
+foreach ($aisDataGieselau as $data) {
+    $lat = $data->latitude;
+    $long = $data->longitude;
+    $name = $data->name;
+    $mmsi = $data->mmsi;
+    echo 'lon: '. $long . ' lat: '.  $lat.  ' name: '. $name. ' mmsi: '. $mmsi. "<br>". PHP_EOL;
+}
 $redis31937->close();
 
 $aisData = array_merge($aisDataBrunsbuettel, $aisDataKiel, $aisDataGieselau);
