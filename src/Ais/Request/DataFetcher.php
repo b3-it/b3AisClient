@@ -169,7 +169,7 @@ class DataFetcher {
             $this->logger->info("Lesevorgang abgeschlossen");
             $this->redisData->connect();
 
-            $this->logger->debug("Verbinde mit Redis, IP: $redisIP, Port: $redisPort");
+            $this->logger->debug("Verbinde mit Redis, IP: ". $this->redisData->getIP() .  " , Port: " . $this->redisData->getPort());
             $this->redisData->clear();
             $this->redisData->write($combinedData);
             $this->logger->info("Schreibe Daten in Redis...");
