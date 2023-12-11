@@ -44,7 +44,14 @@ try {
     $ip = $requestHandler->getIP();
     $port = $requestHandler->getPort();
 
-    $config = new Config('config/config-sample.json');
+    $configFilePath = 'config/config-sample.json';
+
+    if (!file_exists($configFilePath)) {
+        die("Die Konfigurationsdatei '$configFilePath' existiert nicht.");
+    }
+
+    $config = new Config($configFilePath);
+
     $logger = new Logger("Schleuse_$port");
     $helper = new Helper();
     $redisData = new RedisData($config, $port);

@@ -10,7 +10,7 @@ for ((i=0; i<$count; i++)); do
     port=${ports[$i]}
 
     # Prozess im Hintergrund starten
-    /usr/local/bin/php processor.php --ip $ip --port $port &
+    php processor.php --ip $ip --port $port &
 
 done
 

@@ -15,7 +15,7 @@ require_once 'Ais/Request/RedisData.php';
 try {
     $requestHandler = new requestHandler();
     $requestHandler->parseArgumentsViewer();
-    $config = new Config('config/config-sample.json');
+    $config = new Config('config/config.json');
 
     $port = $requestHandler->getPortViewer();
 
