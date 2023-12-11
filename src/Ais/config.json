@@ -1,8 +1,0 @@
-{
-  "ip": "172.30.11.225",
-  "port": 31935,
-  "logFile": "logfile.txt",
-  "redis_ip": "127.0.0.1'",
-  "redis_port" : "6379"
-
-}

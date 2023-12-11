@@ -4,7 +4,6 @@
     "ext-redis": "*",
     "ext-sockets": "*",
     "monolog/monolog": "2.0.*",
-    "ext-pcntl": "*",
     "ext-json": "*"
   },
   "require-dev": {

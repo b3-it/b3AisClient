@@ -2,20 +2,25 @@
 
 namespace Ais;
 
-use Ais\Helper\Helper;
+use Ais\Message\Helper;
+use Ais\Request\Config;
+use Ais\Request\DataFetcher;
+use Ais\Request\RedisData;
+use Ais\Request\requestHandler;
 use Exception;
-use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
-
-
-require_once  __DIR__ . '/../vendor/autoload.php';
-require_once 'Ais/DataFetcher.php';
-require_once 'Ais/Config.php';
-require_once 'Ais/requestHandler.php';
+use Monolog\Logger;
 
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+
+require_once  __DIR__ . '/../vendor/autoload.php';
+require_once 'Ais/Request/DataFetcher.php';
+require_once 'Ais/Request/Config.php';
+require_once 'Ais/Request/requestHandler.php';
+
+
 
 spl_autoload_register( function ($class) {
 
@@ -39,8 +44,7 @@ try {
     $ip = $requestHandler->getIP();
     $port = $requestHandler->getPort();
 
-    $config = new Config('config/config.json');
-
+    $config = new Config('config/config-sample.json');
     $logger = new Logger("Schleuse_$port");
     $helper = new Helper();
     $redisData = new RedisData($config, $port);
@@ -48,14 +52,23 @@ try {
     //LogLevel einstellen
     $logLevel = ($config->get('logLevel')) ?? Logger::INFO;
 
-    $logger->pushHandler(new StreamHandler('logs/log.txt', $logLevel));
-    $dataFetcher = new DataFetcher($logger, $helper, $redisData);
+    $logger->pushHandler(new StreamHandler($config->get('logFile'), $logLevel));
+    $dataFetcher = new DataFetcher($logger, $helper, $redisData, $config);
     $dataFetcher->setIp($ip);
     $dataFetcher->setPort($port);
     $dataFetcher->fetchAndSendToRedis();
 
+
+
+
 } catch (Exception $e) {
     echo "Fehler beim Verbinden und Empfangen von Daten: \n" . $e->getMessage();
 }
+
+
+    //TODO:
+    // 5) in alle Verzeichnisse eine geeignete .htaccess Datei legen die die Zugriffe auf ungewollte Dateien verbietet ?
+    // 7) es werden sowohl auf der Konsole als auch im Browser immer noch Meldungen ausgegeben. Die sollen ausschließlich ins Log-File ~ verbose
+
 
 

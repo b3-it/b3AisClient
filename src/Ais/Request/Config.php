@@ -1,5 +1,5 @@
 <?php
-namespace Ais;
+namespace Ais\Request;
 
 
 /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace Ais\Helper;
+namespace Ais\Message;
 
 class Message24 extends Message
 {

@@ -1,8 +1,6 @@
 <?php
 
-namespace Ais;
-
-use Psr\Log\LogLevel;
+namespace Ais\Request;
 
 /**
  * Class RedisData
@@ -26,9 +24,9 @@ class RedisData
     protected $config;
     protected $host_port;
 
-    public function __construct(Config $config, $port)
+    public function __construct(Config $config, $portSchleuse)
     {
-        $this->host_port = $port;
+        $this->host_port = $portSchleuse;
         $this->redis_ip = $config->get('redis_ip') ?? '127.0.0.1';
         $this->redis_port = $config->get('redis_port') ?? 6379;
     }
@@ -141,7 +139,15 @@ class RedisData
         return $this->data_key_prefix . $this->host_port;
     }
 
+    public function getIP()
+    {
+        return $this->redis_ip;
+    }
 
+    public function getPort()
+    {
+        return $this->redis_port;
+    }
 
 
 }

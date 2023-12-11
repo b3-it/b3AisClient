@@ -1,6 +1,6 @@
 <?php
 
-namespace Ais;
+namespace Ais\Request;
 
 /**
  * Class requestHandler
@@ -15,6 +15,8 @@ class requestHandler
 {
     private $ip;
     private $port;
+
+    private $portViewer;
 
     public function __construct()
     {
@@ -44,6 +46,18 @@ class requestHandler
         }
     }
 
+    public function parseArgumentsViewer()
+    {
+        if (php_sapi_name() == 'cli') {
+            $options = getopt('', ['port:']);
+            $this->portViewer = $options['port'] ?? null;
+        } else {
+            $this->portViewer = $_GET['port'] ?? null;
+        }
+    }
+
+
+
     public function getIP()
     {
         return $this->ip;
@@ -52,6 +66,11 @@ class requestHandler
     public function getPort()
     {
         return $this->port;
+    }
+
+    public function getPortViewer()
+    {
+        return $this->portViewer;
     }
 
     public function printInputFormat()

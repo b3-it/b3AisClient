@@ -3,8 +3,8 @@
 namespace Ais\tests;
 
 use Ais\Decoder;
-use Ais\Helper\Message;
-use Ais\Helper\Helper;
+use Ais\Message\Message;
+use Ais\Message\Helper;
 
 use PHPUnit\Framework\TestCase;
 

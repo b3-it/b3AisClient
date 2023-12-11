@@ -1,6 +1,6 @@
 <?php
 
-namespace Ais\Helper;
+namespace Ais\Message;
 
 /**
  * Die Klasse Message repräsentiert eine AIS-Nachricht und dient zur Speicherung und Organisation

@@ -1,10 +1,10 @@
 <?php
 
-namespace Ais;
-use Ais\Helper\Helper;
+namespace Ais\Request;
+use Ais\Message\Helper;
 use Exception;
-use Monolog\Logger;
 use Monolog\Handler\StreamHandler;
+use Monolog\Logger;
 
 
 error_reporting(E_ALL);
@@ -28,6 +28,8 @@ class DataFetcher {
 
     private $redisData;
 
+    private $config;
+
     /**
      * Konstruktor der Klasse.
      *
@@ -35,11 +37,11 @@ class DataFetcher {
      * @param Helper $helper Das Helper-Objekt für Hilfsfunktionen.
      * @param RedisData $redisData Das RedisData-Objekt zur Kommunikation mit Redis.
      */
-    public function __construct(Logger $logger, Helper $helper, RedisData $redisData) {
-
+    public function __construct(Logger $logger, Helper $helper, RedisData $redisData, Config $config) {
         $this->logger = $logger;
         $this->helper = $helper;
         $this->redisData = $redisData;
+        $this->config = $config;
     }
 
     /**
@@ -59,7 +61,7 @@ class DataFetcher {
             $this->logger->error($errorMessage);
             throw new Exception($errorMessage);
         } else{
-            $this->logMessageCLI("Baue den Tunnel auf : IP: $this->ip, Port: $this->port", Logger::INFO);
+            $this->logger->info("Baue den Tunnel auf : IP: $this->ip, Port: $this->port");
         }
 
 
@@ -70,8 +72,7 @@ class DataFetcher {
             $this->logger->error($errorMessage);
             throw new Exception($errorMessage);
         }else{
-            $this->logMessageCLI("Verbindung erfolgreich hergestellt. Lese die Daten ein...", Logger::INFO);
-
+            $this->logger->info("Verbindung erfolgreich hergestellt. Lese die Daten ein...");
         }
         return $sock;
     }
@@ -88,9 +89,11 @@ class DataFetcher {
             $sock = $this->connect();
             $data = [];
             $startTime = time();
-            $endTime = $startTime + 10;
+            $endTime = $startTime + $this->config->get('request_duration_seconds');
             $readTimeout = 180;
             $incompleteMessage = ''; // Unvollständige Nachrichten, die im vorherigen Durchlauf empfangen wurden
+            $redisIP = $this->redisData->getIP();
+            $redisPort = $this->redisData->getPort();
 
             stream_set_timeout($sock, $readTimeout);
 
@@ -108,11 +111,16 @@ class DataFetcher {
 
                 if (!$buffer) {
                     if (feof($sock)) {
-                        $this->logger->critical('Verbindung geschlossen.');
+                        $this->logger->critical('Verbindung geschlossen: Das Ende des Streams wurde erreicht oder IP/Port ist falsch.');
+                        throw new \Exception('Verbindung geschlossen: Das Ende des Streams wurde erreicht oder IP/Port ist falsch.');
                     } else {
-                        $this->logger->critical('Fehler beim Lesen vom Socket.');
+                        $this->logger->critical('Fehler beim Lesen vom Socket: Der Buffer ist leer.');
+                        throw new \Exception('Fehler beim Lesen vom Socket: Der Buffer ist leer.');
+
+                        //exception ist falsch weil falsch aus einer schleuse keine daten ankommen wird ein exception geworfen, obwohl
+                        //gibt es bloß momenten keine schiffe, z.b in der gisela gibt es nie schieffe, und ein exception soll nicht
+                        //geworfen werden
                     }
-                    break;
                 }
 
                 //Falls die Nachricht unvollständig ankommt, weil der Buffer voll ist
@@ -158,12 +166,15 @@ class DataFetcher {
                     }
                 }
             }
-            $this->logMessageCLI("Lesevorgang abgeschlossen, schreibe Daten in Redis...", Logger::INFO);
+            $this->logger->info("Lesevorgang abgeschlossen");
             $this->redisData->connect();
+
+            $this->logger->debug("Verbinde mit Redis, IP: $redisIP, Port: $redisPort");
             $this->redisData->clear();
             $this->redisData->write($combinedData);
+            $this->logger->info("Schreibe Daten in Redis...");
             $this->redisData->close();
-            $this->logMessageCLI("OK!", Logger::INFO);
+            $this->logger->info("Prozess beendet. Status: OK");
 
 
 

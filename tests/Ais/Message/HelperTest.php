@@ -1,8 +1,17 @@
 <?php
 
-namespace Ais\Helper;
+namespace Ais\Message;
 
-use Exception;
+use Ais\Message\Message;
+use Ais\Message\Message123;
+
+use Ais\Message\Message18;
+use Ais\Message\Message19;
+use Ais\Message\Message24;
+use Ais\Message\Message5;
+
+use function PHPUnit\Framework\exactly;
+
 
 require_once('Message.php');
 require_once('Message123.php');
@@ -11,6 +20,13 @@ require_once('Message18.php');
 require_once('Message19.php');
 require_once('Message24.php');
 
+
+define('ERROR_MISSING_ASTERISK', -1);
+define('ERROR_INVALID_CHECKSUM_LENGTH', -2);
+define('ERROR_INVALID_NUMBER_OF_SEQUENCES', -3);
+define('ERROR_INVALID_SEQUENCE_NUMBER', -4);
+define('ERROR_INVALID_SEQUENCE_ORDER', -5);
+define('ERROR_INVALID_MULTIPART_MESSAGE', -6);
 
 
 /**
@@ -180,20 +196,10 @@ class Helper
      *
      * @return array Ein Array von dekodierten Nachrichten.
      */
-    function decodeMessages($incomingArray) {
-        $bitsArray = $this->processPayload($incomingArray);
-
-        if (!is_array($bitsArray)) {
-            throw new Exception("Fehler beim Verarbeiten der Payload");
-        }
-
-
-        if (empty($bitsArray)) {
-            echo "Warnung: Leeres Array nach der Payload-Verarbeitung." . PHP_EOL;
-        }
-
+    function decodeMessages($incommingArray) {
+        $bitsArray = $this->processPayload($incommingArray);
         $decodedMessages = [];
-        $i= 0;
+
         foreach ($bitsArray as $bits){
             $messageType = bindec(substr($bits, 0, 6));
             $message = null;
@@ -217,6 +223,7 @@ class Helper
                     $message = new Message24($messageType);
                     break;
                 default:
+                    echo "Unerkannte Nachricht.";
                     break;
             }
 
@@ -224,72 +231,37 @@ class Helper
                 $decodedMessage = $message->decode($bits);
                 $decodedMessages[] = $decodedMessage;
             }
-
-
         }
 
         return $decodedMessages;
     }
 
     /**
-     * Extrahiert die Nutzdaten aus einer AIS-Nachricht und konvertiert sie in eine Bitfolge
+     * Hilfsfunktion: Extrahiert die Nutzdaten aus einer AIS-Nachricht und konvertiert sie in eine Bitfolge
      * zur weiteren Dekodierung.
      *
      * @param array $incomingArray Ein Array von AIS-Nachrichten in ASCII-Format.
      *
      * @return array Ein Array von AIS-Bit-Daten, wobei jede AIS-Nachricht in 6-Bit-Form vorliegt.
      */
-    function processPayload($incomingArray) {
+    function processPayload($incommingArray) {
+        $payloadArray  = $this->extractPayload($incommingArray);
+        $bitsArray = [];
 
-        try {
-            $payloadArray  = $this->extractPayload($incomingArray);
+        foreach ($payloadArray as $payload) {
+            $aisData168 = ""; // Sechs-Bit-Array von ASCII-Zeichen
+            $symbolsArray = str_split($payload); // In ein Array konvertieren
 
-            if (!is_array($payloadArray)) {
-                throw new Exception("Fehler beim Extrahieren der Payload");
+            foreach ($symbolsArray as $symbol){
+                $decimalValue = $this->convertAsciiToDecimal($symbol); // ASCII zu Dezimal konvertieren
+                $eightBitValue = $this->convertAsciiTo8Bit($decimalValue); // Dezimal zu 8-Bit umwandeln
+                $sixBitValue = $this->convertDecimalTo6Bit($eightBitValue); // 8-Bit zu 6-Bit umwandeln
+                $aisData168 .=  $sixBitValue; // An das 6-Bit-Array anhängen
             }
-
-            if (empty($payloadArray)) {
-                echo "Warnung: Leeres Array nach der Payload-Extraktion." . PHP_EOL;
-            }
-
-
-            $bitsArray = [];
-
-            foreach ($payloadArray as $payload) {
-                $aisData168 = ""; // Sechs-Bit-Array von ASCII-Zeichen
-                $symbolsArray = str_split($payload); // In ein Array konvertieren
-
-                foreach ($symbolsArray as $symbol) {
-                    $decimalValue = $this->convertAsciiToDecimal($symbol); // ASCII zu Dezimal konvertieren
-
-                    if (!$decimalValue) {
-                        throw new Exception("Fehler beim Umwandeln von ASCII in Dezimal.");
-                    }
-
-                    $eightBitValue = $this->convertAsciiTo8Bit($decimalValue); // Dezimal zu 8-Bit umwandeln
-
-                    if (!$eightBitValue) {
-                        throw new Exception("Fehler beim Umwandeln von Dezimal in 8-Bit.");
-                    }
-
-                    $sixBitValue = $this->convertDecimalTo6Bit($eightBitValue); // 8-Bit zu 6-Bit umwandeln
-
-                    if (!$sixBitValue) {
-                        throw new Exception("Fehler beim Umwandeln von 8-Bit in 6-Bit.");
-                    }
-
-                    $aisData168 .=  $sixBitValue; // An das 6-Bit-Array anhängen
-                }
-
-                $bitsArray[] = $aisData168;
-            }
-
-            return $bitsArray;
-        } catch (Exception $e) {
-            error_log('Fehler beim Verarbeiten des Payloads: ' . $e->getMessage(), 0);
-            return [];
+            $bitsArray [] = $aisData168;
         }
 
+        return $bitsArray;
     }
 
 
@@ -305,105 +277,157 @@ class Helper
 
     function calculateAISChecksum($message)
     {
-        try {
-            $calculatedChecksum = 0;
+        $calculatedChecksum = 0; // Initialisierung der Prüfsumme
 
-            // Berechnung der Checksumme von '!' bis '*'
-            $endPosition = strrpos($message, '*'); // Suche nach *
-            if ($endPosition === false) {
-                throw new Exception("Fehler: '*' nicht gefunden.");
-            }
+        // Berechnung der Checksumme von '!' bis '*'
+        $endPosition = strrpos($message, '*'); // Suche nach *
+        if (!$endPosition) return -1; // Fehler bei fehlendem '*'
 
-            $checksumHexString = substr($message, $endPosition + 1);
-            if (strlen($checksumHexString) !== 2) {
-                throw new Exception("Fehler: Ungültige Checksummenlänge.");
-            }
+        $checksumHexString = substr($message, $endPosition + 1);
+        if (strlen($checksumHexString) != 2) return -1; // Fehler bei ungültiger Checksummenlänge
 
-            $decodedChecksum = (int) hexdec($checksumHexString);
+        $decodedChecksum = (int)hexdec($checksumHexString); // Umwandeln des Hex-Strings in Dezimalwert
 
-            // XOR-Verknüpfung
-            for ($i = 1; $i < $endPosition; $i++) {
-                $calculatedChecksum ^= ord($message[$i]);
-            }
+        // XOR-Verknüpfung für die NMEA-Checksumme
+        for ($i = 1; $i < $endPosition; $i++) {
+            $calculatedChecksum ^= ord($message[$i]);
+        }
 
-            if ($calculatedChecksum === $decodedChecksum) {
-                return true;
-            } else {
-                return false;
-            }
-        } catch (Exception $e) {
-            error_log('Fehler beim Überprüfen der NMEA-Checksumme: ' . $e->getMessage(), 0);
+        if ($calculatedChecksum == $decodedChecksum) {
+            return true;
+        }else{
             return false;
         }
 
     }
 
 
+
     /**
      * Extrahiert die Nutzdaten aus den bereinigten AIS-Nachrichten und gibt sie als Array zurück.
      * Kombiniert Segmente, falls eine Nachricht aus mehreren Segmenten besteht.
      *
-     * @param array $incomingArray Ein Array von AIS-Nachrichten, aus denen die Nutzdaten extrahiert werden sollen.
+     * @param array $incommingArray Ein Array von AIS-Nachrichten, aus denen die Nutzdaten extrahiert werden sollen.
      *
      * @return array Ein Array von AIS-Nutzdaten, die aus den AIS-Nachrichten extrahiert wurden.
-     * @throws Exception
      */
 
-    public function extractPayload($incomingArray)
+    public function extractPayload($incommingArray)
     {
-        try {
-            $cleanedArray = $this->cleanMessage($incomingArray);
+        $cleanedArray = $this->cleanMessage($incommingArray);
+        $mergedPayload = [];
 
-            if (!is_array($cleanedArray)) {
-                throw new Exception("Fehler beim Bereinigen der Nachricht");
-            }
+        $reihenfolgeArray = [];
+        foreach ($cleanedArray as $cleanedLine) {
 
-            if (empty($cleanedArray)) {
-                echo "Warnung: Leeres Array nach der Nachrichtenreinigung." . PHP_EOL;
-            }
+            if($this->calculateAISChecksum($cleanedLine)){
 
-            $mergedPayload = [];
+                $cleanedLineExploded = explode("," , $cleanedLine);
 
-            $reihenfolgeArray = [];
-            foreach ($cleanedArray as $cleanedLine) {
+                $numSequences = (int)$cleanedLineExploded[1];
+                $sequenceNumber = (int)$cleanedLineExploded[2];
+                $messageId = ($cleanedLineExploded[3] == '') ? -1 : (int)$cleanedLineExploded[3];
+                $payload = $cleanedLineExploded[5];
 
-                if ($this->calculateAISChecksum($cleanedLine)) {
+                if ($numSequences == 1){
+                    $mergedPayload[] = $cleanedLineExploded[5];
+                }else {
+                    //wenn es mehrere segmente gibt, jedem payload die seqNum zuweisen und anschließend sortieren
+                    if ($sequenceNumber >= 1 && $sequenceNumber <= $numSequences) {
+                        $reihenfolgeArray[$sequenceNumber] = $payload;
 
-                    $cleanedLineExploded = explode(",", $cleanedLine);
-
-                    if (count($cleanedLineExploded) >= 6) {
-                        $numSequences = (int) $cleanedLineExploded[1];
-                        $sequenceNumber = (int) $cleanedLineExploded[2];
-                        $messageId = ($cleanedLineExploded[3] == '') ? -1 : (int) $cleanedLineExploded[3];
-                        $payload = $cleanedLineExploded[5];
-
-                        if ($numSequences == 1) {
-                            $mergedPayload[] = $payload;
-                        } else {
-                            // Wenn es mehrere Segmente gibt, jedem Payload die SeqNum zuweisen und anschließend sortieren
-                            if ($sequenceNumber >= 1 && $sequenceNumber <= $numSequences) {
-                                $reihenfolgeArray[$sequenceNumber] = $payload;
-
-                                // Wenn alle Segmente gesammelt sind, kombinieren
-                                if (count($reihenfolgeArray) === $numSequences) {
-                                    ksort($reihenfolgeArray); // Das Array sortieren, falls die Reihenfolge nicht aufeinanderfolgend ist
-                                    $mergedPayload[] = implode('', $reihenfolgeArray);
-                                    $reihenfolgeArray = [];
-                                }
-                            }
+                        // Wenn alle Segmente gesammelt sind, kombinieren
+                        if (count($reihenfolgeArray) === $numSequences) {
+                            ksort($reihenfolgeArray); //das Array sortieren, falls die Reihenfolge nicht aufeinanderfolgend ist
+                            $mergedPayload[] = implode('', $reihenfolgeArray);
+                            $reihenfolgeArray =  [];
                         }
-                    } else {
-                        throw new Exception("Ungültiges Datenformat: $cleanedLine");
                     }
+
                 }
             }
-
-            return $mergedPayload;
-        } catch (Exception $e) {
-            error_log('Fehler beim Extrahieren der Payload: ' . $e->getMessage(), 0);
-            return [];
         }
+        return $mergedPayload;
     }
+
+
+
+
+
+//        static $numSequences, $sequenceNumber,$previousSequenceNumber; // Variablen für Sequenzen (1-9)
+//        static $messageSid = -1, $currentMessageSid; // Variablen für Nachrichten-ID
+//        static $ituBuffer; // Puffer für ITU-Nachricht
+//        $checksum = 0; // Initialisierung der Prüfsumme
+//
+//        // Berechnung der Checksumme von '!' bis '*'
+//        $endPosition = strrpos($rawdata, '*'); // Suche nach *
+//        if ($endPosition === false) return -1; // Fehler bei fehlendem '*'
+//
+//        $checksumHexString = substr($rawdata, $endPosition + 1); // Extrahieren der Checksumme als Hex-String
+//        if (strlen($checksumHexString) != 2) return -1; // Fehler bei ungültiger Checksummenlänge
+//
+//        $decodedChecksum = (int)hexdec($checksumHexString); // Umwandeln des Hex-Strings in Dezimalwert
+//
+//        // XOR-Verknüpfung für die NMEA-Checksumme
+//        for ($index = 1; $index < $endPosition; $index++) $checksum ^= ord($rawdata[$index]);
+//
+//        if ($checksum == $decodedChecksum) { // Überprüfung der NMEA-Checksumme
+//            $rawDataArray = explode(',', $rawdata); // Aufteilen der Rohdaten
+//
+//            // Extrahieren der Sequenz- und Nachrichten-IDs
+//            $numSequences = (int)$rawDataArray[1];
+//            $sequenceNumber = (int)$rawDataArray[2];
+//
+//            // Extrahieren der Nachrichten-ID, Prüfen auf leere Nachrichten-ID
+//            $messageSid = ($rawDataArray[3] == '') ? -1 : (int)$rawDataArray[3];
+//
+//            if ($numSequences < 1 || $numSequences > 9) {
+//                echo "ERROR,INVALID_NUMBER_OF_SEQUENCES ".time()." $rawdata\n";
+//                return -1;
+//            }
+//            else if ($sequenceNumber < 1 || $sequenceNumber > 9) { // invalid sequences number
+//                echo "ERROR,INVALID_SEQUENCES_NUMBER ".time()." $rawdata\n";
+//                return -1;
+//            }
+//            else if ($sequenceNumber > $numSequences) {
+//                echo "ERROR,INVALID_SEQUENCE_NUMBER_OR_INVALID_NUMBER_OF_SEQUENCES ".time()." $rawdata\n";
+//                return -1;
+//            }
+//            else { // Sequenzierung ist in Ordnung, Behandlung von Einzel- und Mehrteilnachrichten
+//                if ($sequenceNumber == 1) {
+//                    // Initialisierung für die erste Sequenz
+//                    $ituBuffer = "";
+//                    $previousSequenceNumber = 0;
+//                    $currentMessageSid = $messageSid;
+//                }
+//
+//                if ($numSequences > 1) { // Für Mehrteilnachrichten
+//                    // Überprüfen der Nachrichten-ID und Sequenzreihenfolge
+//                    if ($currentMessageSid != $messageSid || $messageSid == -1 || ($sequenceNumber - $previousSequenceNumber) != 1) {
+//                        // Ungültige Nachrichten-ID, ungültige Anfangsnachrichten-ID oder nicht in Reihenfolge
+//                        $messageSid = -1;
+//                        $currentMessageSid = -1;
+//                        echo "ERROR, INVALID_MULTIPART_MESSAGE " . time() . " $rawdata\n";
+//                        return -1;
+//                    } else {
+//                        $previousSequenceNumber++;
+//                    }
+//                }
+//
+//                // Hinzufügen der ITU-Nachricht und Extrahieren der Füllbits
+//                $ituBuffer .= $rawDataArray[5];
+//
+//                // Verarbeiten der Nachricht, abhängig von der Sequenz
+//                if ($numSequences == 1 || $numSequences == $previousSequenceNumber) {
+//                    return $this->processAisItu($ituBuffer);
+//                }
+//            }
+//        }
+//        return -1; // Fehler
+//    }
+
+
+
 
 
     /**
@@ -412,7 +436,6 @@ class Helper
      * @param array $incomingArray Ein Array von eingehenden AIS-Nachrichten.
      *
      * @return array Ein Array von bereinigten AIS-Nachrichten ohne unnötige Zeichen.
-     * @throws Exception
      */
 
     public function cleanMessage($incomingArray)
@@ -420,29 +443,44 @@ class Helper
 
         $cleanedMessages = [];
 
-        try {
-            foreach ($incomingArray as $line) {
-                if (empty($line)) {
-                    continue;
-                }
-
-                // Prüfen, ob Zeichenfolge rtrim-Fehler verursacht
-                $cleanedLine = rtrim($line, "\r");
-
-                if (!$cleanedLine) {
-                    throw new Exception('Fehler beim Entfernen des Carriage Return von der Zeichenfolge');
-                }
-
-                $cleanedMessages[] = $cleanedLine;
+        foreach ($incomingArray as $line){
+            if (empty($line)){
+                continue;
             }
-        } catch (Exception $e) {
-            echo 'ERROR: ' . $e->getMessage() . PHP_EOL;
-            return [];
-        }
 
+            $cleanedLine = rtrim($line, "\r");
+            $cleanedMessages [] = $cleanedLine;
+        }
         return $cleanedMessages;
 
     }
+
+
+
+
+//        $currentBuffer = $currentBuffer.$incomingBuffer; // Fügt die empfangenen Daten zum aktuellen Puffer hinzu
+//        $lastPosition = 0; // Speichert die letzte Position, bis zu der die Daten verarbeitet wurden
+//
+//        // Durchsuchen des Puffers nach Nachrichtensegmenten mit dem Startmuster "VDM"
+//        while (($start = strpos($currentBuffer, "VDM", $lastPosition)) !== FALSE) {
+//            // Prüfen, ob das Ende des aktuellen Segments (beendet mit "\r\n") gefunden wurde
+//            if (($end = strpos($currentBuffer, "\r", $start)) !== FALSE) {
+//                // Extrahieren des Nachrichtensegments aus dem Puffer
+//                $messageSegment = substr($currentBuffer, $start - 3, ($end - $start + 3));
+//
+//
+//                $this->processAisRaw($messageSegment);
+//
+//                // Aktualisieren der letzten Position im Puffer
+//                $lastPosition = $end + 1;
+//            } else break; // Wenn das Ende des Segments nicht gefunden wurde, wird die Schleife unterbrochen
+//        }
+//
+//        // Bereinigen des Puffers: Entfernen der bereits verarbeiteten Daten
+//        if ($lastPosition > 0) $currentBuffer = substr($currentBuffer, $lastPosition);
+//
+//        // Prüfen auf Pufferüberlauf und Zurücksetzen bei Bedarf
+//        if (strlen($currentBuffer) > 1024) $currentBuffer = "";
 
 
 
@@ -565,7 +603,7 @@ class Helper
      * @param string $aisChannel - Der AIS-Kanal (optional, Standard: 'A')
      * @return string - Die erzeugte AIS-Nachricht
      */
-    function createAisMessage($encodedData, $aisChannel = 'A',  $messagePart = 1, $totalParts = 1, $sequenceNumber = '' ) {
+    function createAisMessage($encodedData, $messagePart = 1, $totalParts = 1, $sequenceNumber = '', $aisChannel = 'A') {
         $bitLength = strlen($encodedData);
         $remainingBits = $bitLength % 6;
         $paddingLength = ($remainingBits > 0) ? 6 - $remainingBits : 0;
@@ -580,7 +618,7 @@ class Helper
         }
 
         $checksum = 0;
-        $ituMessage = "AIVDM,$messagePart,$totalParts,$sequenceNumber,$aisChannel,".$ituMessage.",0";
+        $ituMessage = "AIVDM,$messagePart,$totalParts,$sequenceNumber,$aisChannel," . $ituMessage . ",0";
 
         foreach (str_split($ituMessage) as $char) {
             $checksum ^= ord($char);
@@ -593,10 +631,10 @@ class Helper
         $msb = (($checksum & 0xF0) >> 4) & 0x0F;
         $msbHex = ($msb >=0 && $msb <= 15) ? $hexArray[$msb] : '0';
 
-        $finalAisMessage = '!'.$ituMessage."*{$msbHex}{$lsbHex}";
+        $finalAisMessage = "!{$ituMessage}*{$msbHex}{$lsbHex}\r\n";
 
         // Entfernen der Padding-Bits vor der Rückgabe der Nachricht
-        return $finalAisMessage;
+        return substr($finalAisMessage, 0, -$paddingLength);
     }
 
 }
