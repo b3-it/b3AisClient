@@ -112,10 +112,6 @@ $aisData = array_merge($aisDataBrunsbuettel, $aisDataKiel, $aisDataGieselau);
 if (empty($aisData)) {
     echo "Keine Daten in Redis gefunden." . PHP_EOL;
 } else {
-    echo "AIS-Daten aus Redis:" . PHP_EOL;
-    foreach ($aisData as $data) {
-        echo var_dump($data) . PHP_EOL;
-    }
 
     echo '<script type="module">';
     $i = 0;
