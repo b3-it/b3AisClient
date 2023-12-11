@@ -56,7 +56,7 @@ echo '
 //  featureList[1] = {'lon' : 9.1503416666667,'lat': 53.892906666667, 'name':'','mmsi':'244129905'};
 //  featureList[2] = {'lon' : 9.1441183333333,'lat': 53.893051666667, 'name':'','mmsi':'209543000'};
 //  featureList[3] = {'lon' : 9.1511666666667,'lat': 53.893463333333, 'name':'','mmsi':'244700462'};
-$config = new Config(__DIR__ . "/../../config/config-sample.json");
+$config = new Config(__DIR__ . "/../../config/config.json");
 
 /*
 $redis = new RedisData($config, $config->get('port'));
