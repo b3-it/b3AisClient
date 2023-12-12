@@ -16,9 +16,9 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
 require_once  __DIR__ . '/../vendor/autoload.php';
-require_once 'Ais/Request/DataFetcher.php';
-require_once 'Ais/Request/Config.php';
-require_once 'Ais/Request/requestHandler.php';
+require_once __DIR__ . '/Ais/Request/DataFetcher.php';
+require_once __DIR__ . '/Ais/Request/Config.php';
+require_once __DIR__ . '/Ais/Request/requestHandler.php';
 
 
 
@@ -59,7 +59,9 @@ try {
     //LogLevel einstellen
     $logLevel = ($config->get('logLevel')) ?? Logger::INFO;
 
-    $logger->pushHandler(new StreamHandler($config->get('logFile'), $logLevel));
+    $logFile = $config->get('logFile') ?: "log.txt";
+    $logFile = __DIR__.'/'.$logFile;
+    $logger->pushHandler(new StreamHandler($logFile, $logLevel));
     $dataFetcher = new DataFetcher($logger, $helper, $redisData, $config);
     $dataFetcher->setIp($ip);
     $dataFetcher->setPort($port);
