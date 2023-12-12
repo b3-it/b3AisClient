@@ -33,57 +33,49 @@ try {
             // Speichern der Daten unter dem entsprechenden Redis-Key
             $aisDataCombined[$redisKey] = $aisData;
         }
-
         foreach ($aisDataCombined as $redisKey => $data) {
-            echo "Redis Key: $redisKey" . PHP_EOL;
-            echo "Daten:" . PHP_EOL;
-            foreach ($data as $key => $value) {
-                if (is_object($value)) {
-                    $value = (array)$value;
-                }
+            echo "<p><strong>Redis Key:</strong> $redisKey</p>";
+            echo "<p><strong>Daten:</strong></p>";
+            echo "<ul>";
 
-                if (is_array($value) || is_object($value)) {
-                    echo "$key: " . print_r($value, true) . PHP_EOL;
-                } else {
-                    // Andernfalls zeige den Wert normal an
-                    echo "$key: $value\n";
+            foreach ($data as $index => $arrayData) {
+                echo "<br>";
+                echo "<li>";
+                $schiffNummer = $index + 1;
+                echo "Schiff $schiffNummer <br>";
+                foreach ($arrayData as $key => $value) {
+                    echo "<br>&nbsp;&nbsp;<strong>$key</strong> => " . print_r($value, true);
                 }
+                echo "</li>";
             }
-            echo "-----------------" . PHP_EOL;
+            echo "</ul>";
+            echo "-----------------<br>";
         }
-    }else{
+    } else {
         $redisData = new RedisData($config, $port);
         $redisData->connect();
         $redisKey = 'ais_data_' . $port;
         $aisData = $redisData->read(true);
         $redisData->close();
 
-        echo "Redis Key: $redisKey" . PHP_EOL;
-        echo "Daten:" . PHP_EOL;
+        echo "<p><strong>Redis Key:</strong> $redisKey</p>";
+        echo "<p><strong>Daten:</strong></p>";
+        echo "<ul>";
 
-        foreach ($aisData as $index => $data) {
-            echo "$index: Array" . PHP_EOL;
-            echo "(" . PHP_EOL;
+        foreach ($aisData as $index => $arrayData) {
+            echo "<br>";
+            echo "<li>";
+            $schiffNummer = $index + 1;
+            echo "Schiff $schiffNummer <br>";
 
-            foreach ($data as $key => $value) {
-                if (is_object($value)) {
-                    $value = (array)$value;
-                }
-
-                if (is_array($value) || is_object($value)) {
-                    echo "    [$key] => " . print_r($value, true) . PHP_EOL;
-                } else {
-                    echo "    [$key] => $value" . PHP_EOL;
-                }
+            foreach ($arrayData as $key => $value) {
+                echo "<br>&nbsp;&nbsp;<strong>$key</strong> => " . print_r($value, true);
             }
-
-            echo ")" . PHP_EOL;
-            echo PHP_EOL;
+            echo "</li>";
         }
+        echo "</ul>";
     }
-
-
-
 } catch (Exception $e) {
-    echo "Fehler beim Verbinden und Empfangen von Daten: \n" . $e->getMessage();
+    echo "Fehler beim Verbinden und Empfangen von Daten: <br>" . $e->getMessage();
 }
+?>

@@ -18,19 +18,17 @@ class RedisData
 
     protected $data_key_prefix = 'ais_data_';
 
-
     protected $_redis = null;
 
     protected $host_port;
 
     public function __construct(Config $config, $portSchleuse)
     {
+
         $this->host_port = $portSchleuse;
         $this->redis_ip = $config->get('redis_ip') ?: '127.0.0.1';
         $this->redis_port = $config->get('redis_port') ?: 6379;
     }
-
-
 
 
     /**

@@ -126,8 +126,8 @@ class DataFetcher {
                 }
 
                 $data = array_filter($data, 'strlen'); // Leere Zeilen aus den Nachrichten entfernen
-                $this->logger->debug('Array von empfangenen Daten: ' . json_encode($data));
 
+                $this->logger->debug('Array von empfangenen Daten: ' . json_encode($data));
                 //echo "Array von empfangenen Daten: ". PHP_EOL;
                 //var_dump($data). PHP_EOL;
 
@@ -155,8 +155,11 @@ class DataFetcher {
                         $combinedData[$mmsi] = $datum;
                     }
                 }
+
+                $this->logger->info(sprintf("empfangene Daten: MMSI: %s Name: %s",$datum->mmsi, $datum->name));
+
             }
-            $this->logger->info("Lesevorgang abgeschlossen");
+            $this->logger->notice("Lesevorgang abgeschlossen. Es wurden Daten von " . count($combinedData) . " Schiffen gelesen.");
             $this->redisData->connect();
             $this->logger->debug("Verbunden mit Redis, IP: ". $this->redisData->getIP() .  " , Port: " . $this->redisData->getPort());
             $this->redisData->clear();
