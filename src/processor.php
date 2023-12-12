@@ -44,7 +44,7 @@ try {
     $ip = $requestHandler->getIP();
     $port = $requestHandler->getPort();
 
-    $configFilePath = 'config/config-sample.json';
+    $configFilePath =  __DIR__.'/config/config.json';
 
     if (!file_exists($configFilePath)) {
         die("Die Konfigurationsdatei '$configFilePath' existiert nicht.");
