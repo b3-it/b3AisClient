@@ -108,6 +108,8 @@ class DataFetcher {
             while (time() < $endTime) {
 
                 $buffer = fread($sock, 1024);
+                $receivedTimestamp= time();
+                $this->logger->debug("Ein Array mit Daten wurde gelesen am: " . date('Y-m-d H:i:s', $receivedTimestamp));
 
                 if (!$buffer) {
                     continue;
@@ -126,12 +128,12 @@ class DataFetcher {
                 }
 
                 $data = array_filter($data, 'strlen'); // Leere Zeilen aus den Nachrichten entfernen
-                $this->logger->debug('Array von empfangenen Daten: ' . json_encode($data));
 
+                $this->logger->debug('Array von empfangenen Daten: ' . json_encode($data));
                 //echo "Array von empfangenen Daten: ". PHP_EOL;
                 //var_dump($data). PHP_EOL;
 
-                $decodedData = $this->sendDataToDecoder($data);
+                $decodedData = $this->sendDataToDecoder($data,$receivedTimestamp);
 
 
                 // Nachrichten mit nur dem Schiffsnamen und solchen mit nur geografischen Daten kombinieren.
@@ -150,13 +152,22 @@ class DataFetcher {
                         if (!is_null($datum->latitude)) {
                             $combinedData[$mmsi]->latitude = $datum->latitude;
                         }
+                        if (!is_null($datum->receivedTimestamp)) {
+                            $combinedData[$mmsi]->receivedTimestamp = $datum->receivedTimestamp;
+                        }
                     } else {
                         // Falls das Schiff nicht im kombinierten Array vorhanden ist, füge es hinzu
                         $combinedData[$mmsi] = $datum;
                     }
                 }
+
+                foreach ($combinedData as $data){
+                    $this->logger->info(sprintf("Schiffe in der Schleuse: MMSI: %s Name: %s",$data->mmsi, $data->name));
+                }
+                $this->logger->info(sprintf("Letzte Nachricht von: MMSI: %s Name: %s. Empfangen am: %s",$datum->mmsi, $combinedData[$mmsi]->name, date('Y-m-d H:i:s', $receivedTimestamp)));
+
             }
-            $this->logger->info("Lesevorgang abgeschlossen");
+            $this->logger->notice("Lesevorgang abgeschlossen. Es wurden Daten von " . count($combinedData) . " Schiffen gelesen.");
             $this->redisData->connect();
             $this->logger->debug("Verbunden mit Redis, IP: ". $this->redisData->getIP() .  " , Port: " . $this->redisData->getPort());
             $this->redisData->clear();
@@ -179,11 +190,11 @@ class DataFetcher {
      * @return array Die dekodierten Daten.
      * @throws Exception Wenn ein Fehler beim Senden an den Decoder auftritt.
      */
-    function sendDataToDecoder(array $data)
+    function sendDataToDecoder(array $data, $receivedTimestamp)
     {
         try {
 
-            $decodedData = $this->helper->decodeMessages($data);
+            $decodedData = $this->helper->decodeMessages($data,$receivedTimestamp);
 
             if (empty($decodedData)) {
                 $this->logger->error('Keine dekodierten Daten vorhanden.');

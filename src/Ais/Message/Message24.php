@@ -5,9 +5,9 @@ namespace Ais\Message;
 class Message24 extends Message
 {
 
-    public function __construct($messageType)
+    public function __construct($messageType,$receivedTimestamp)
     {
-        parent::__construct($messageType);
+        parent::__construct($messageType, $receivedTimestamp);
     }
 
     /**
@@ -20,18 +20,10 @@ class Message24 extends Message
     {
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
         $this->name = $this->convertBinaryToAISChars($aisdata168, 90, 42);
-        $this->receivedTimestamp = time();
 
         return $this;
 
     }
 
-    function printObject()
-    {
-        $output =   '<br>'. "MMSI: " .$this->mmsi. '<br>' .
-                    "Message type: " .$this->messageType. '<br>'.
-                    "Name:  " .$this->name. '<br>' ;
 
-        echo $output;
-    }
 }

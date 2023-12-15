@@ -9,81 +9,55 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
 require_once  __DIR__ . '/../vendor/autoload.php';
-require_once 'Ais/Request/Config.php';
-require_once 'Ais/Request/RedisData.php';
+require_once __DIR__ . '/Ais/Request/Config.php';
+require_once __DIR__ . '/Ais/Request/RedisData.php';
 
 try {
-    $requestHandler = new requestHandler();
+    $requestHandler = new RequestHandler();
     $requestHandler->parseArgumentsViewer();
-    $config = new Config('config/config.json');
+    $config = new Config(__DIR__.'/config/config.json');
 
     $port = $requestHandler->getPortViewer();
+    $redisPorts = [31935, 31936, 31937];
+    $aisDataCombined = [];
 
-    if (!$port) {
-        $redisPorts = [31935, 31936, 31937];
-        $aisDataCombined = [];
-
-        foreach ($redisPorts as $port) {
-            $redisData = new RedisData($config, $port);
-            $redisData->connect();
-            $redisKey = $redisData->getDataKey();
-            $aisData = $redisData->read(true);
-            $redisData->close();
-
-            // Speichern der Daten unter dem entsprechenden Redis-Key
-            $aisDataCombined[$redisKey] = $aisData;
-        }
-
-        foreach ($aisDataCombined as $redisKey => $data) {
-            echo "Redis Key: $redisKey" . PHP_EOL;
-            echo "Daten:" . PHP_EOL;
-            foreach ($data as $key => $value) {
-                if (is_object($value)) {
-                    $value = (array)$value;
-                }
-
-                if (is_array($value) || is_object($value)) {
-                    echo "$key: " . print_r($value, true) . PHP_EOL;
-                } else {
-                    // Andernfalls zeige den Wert normal an
-                    echo "$key: $value\n";
-                }
-            }
-            echo "-----------------" . PHP_EOL;
-        }
-    }else{
+    function readData($config, $port, &$aisDataCombined, $isCli)
+    {
         $redisData = new RedisData($config, $port);
         $redisData->connect();
-        $redisKey = 'ais_data_' . $port;
+        $redisKey = $redisData->getDataKey();
         $aisData = $redisData->read(true);
         $redisData->close();
+        $aisDataCombined[$redisKey] = $aisData;
 
-        echo "Redis Key: $redisKey" . PHP_EOL;
-        echo "Daten:" . PHP_EOL;
+        echo $isCli ? "Redis Key: $redisKey" . PHP_EOL . "Daten:" . PHP_EOL : "<p><strong>Redis Key:</strong> $redisKey</p><p><strong>Daten:</strong></p><ul>";
 
-        foreach ($aisData as $index => $data) {
-            echo "$index: Array" . PHP_EOL;
-            echo "(" . PHP_EOL;
+        foreach ($aisData as $index => $arrayData) {
+            echo $isCli ? "Schiff " . ($index + 1) . PHP_EOL : "<br><li>Schiff " . ($index + 1) . "<br>";
 
-            foreach ($data as $key => $value) {
-                if (is_object($value)) {
-                    $value = (array)$value;
-                }
-
-                if (is_array($value) || is_object($value)) {
-                    echo "    [$key] => " . print_r($value, true) . PHP_EOL;
-                } else {
-                    echo "    [$key] => $value" . PHP_EOL;
-                }
+            foreach ($arrayData as $key => $value) {
+                echo $isCli ? "  $key: " . print_r($value, true) . PHP_EOL : "<br>&nbsp;&nbsp;<strong>$key</strong> => " . print_r($value, true);
             }
 
-            echo ")" . PHP_EOL;
-            echo PHP_EOL;
+            echo $isCli ? "-----------------" . PHP_EOL : "</li>";
         }
+
+        echo $isCli ? '' : "</ul>-----------------<br>";
+    }
+
+    $isCli = php_sapi_name() === 'cli';
+
+    if (!$port) {
+        foreach ($redisPorts as $port) {
+            readData($config, $port, $aisDataCombined, $isCli);
+        }
+    } else {
+        readData($config, $port, $aisDataCombined, $isCli);
     }
 
 
-
 } catch (Exception $e) {
-    echo "Fehler beim Verbinden und Empfangen von Daten: \n" . $e->getMessage();
+    echo "Fehler beim Verbinden und Empfangen von Daten: <br>" . $e->getMessage();
 }
+
+?>
