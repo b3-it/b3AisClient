@@ -9,73 +9,55 @@ ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
 
 require_once  __DIR__ . '/../vendor/autoload.php';
-require_once 'Ais/Request/Config.php';
-require_once 'Ais/Request/RedisData.php';
+require_once __DIR__ . '/Ais/Request/Config.php';
+require_once __DIR__ . '/Ais/Request/RedisData.php';
 
 try {
-    $requestHandler = new requestHandler();
+    $requestHandler = new RequestHandler();
     $requestHandler->parseArgumentsViewer();
-    $config = new Config('config/config.json');
+    $config = new Config(__DIR__.'/config/config.json');
 
     $port = $requestHandler->getPortViewer();
+    $redisPorts = [31935, 31936, 31937];
+    $aisDataCombined = [];
 
-    if (!$port) {
-        $redisPorts = [31935, 31936, 31937];
-        $aisDataCombined = [];
-
-        foreach ($redisPorts as $port) {
-            $redisData = new RedisData($config, $port);
-            $redisData->connect();
-            $redisKey = $redisData->getDataKey();
-            $aisData = $redisData->read(true);
-            $redisData->close();
-
-            // Speichern der Daten unter dem entsprechenden Redis-Key
-            $aisDataCombined[$redisKey] = $aisData;
-        }
-        foreach ($aisDataCombined as $redisKey => $data) {
-            echo "<p><strong>Redis Key:</strong> $redisKey</p>";
-            echo "<p><strong>Daten:</strong></p>";
-            echo "<ul>";
-
-            foreach ($data as $index => $arrayData) {
-                echo "<br>";
-                echo "<li>";
-                $schiffNummer = $index + 1;
-                echo "Schiff $schiffNummer <br>";
-                foreach ($arrayData as $key => $value) {
-                    echo "<br>&nbsp;&nbsp;<strong>$key</strong> => " . print_r($value, true);
-                }
-                echo "</li>";
-            }
-            echo "</ul>";
-            echo "-----------------<br>";
-        }
-    } else {
+    function readData($config, $port, &$aisDataCombined, $isCli)
+    {
         $redisData = new RedisData($config, $port);
         $redisData->connect();
-        $redisKey = 'ais_data_' . $port;
+        $redisKey = $redisData->getDataKey();
         $aisData = $redisData->read(true);
         $redisData->close();
+        $aisDataCombined[$redisKey] = $aisData;
 
-        echo "<p><strong>Redis Key:</strong> $redisKey</p>";
-        echo "<p><strong>Daten:</strong></p>";
-        echo "<ul>";
+        echo $isCli ? "Redis Key: $redisKey" . PHP_EOL . "Daten:" . PHP_EOL : "<p><strong>Redis Key:</strong> $redisKey</p><p><strong>Daten:</strong></p><ul>";
 
         foreach ($aisData as $index => $arrayData) {
-            echo "<br>";
-            echo "<li>";
-            $schiffNummer = $index + 1;
-            echo "Schiff $schiffNummer <br>";
+            echo $isCli ? "Schiff " . ($index + 1) . PHP_EOL : "<br><li>Schiff " . ($index + 1) . "<br>";
 
             foreach ($arrayData as $key => $value) {
-                echo "<br>&nbsp;&nbsp;<strong>$key</strong> => " . print_r($value, true);
+                echo $isCli ? "  $key: " . print_r($value, true) . PHP_EOL : "<br>&nbsp;&nbsp;<strong>$key</strong> => " . print_r($value, true);
             }
-            echo "</li>";
+
+            echo $isCli ? "-----------------" . PHP_EOL : "</li>";
         }
-        echo "</ul>";
+
+        echo $isCli ? '' : "</ul>-----------------<br>";
     }
+
+    $isCli = php_sapi_name() === 'cli';
+
+    if (!$port) {
+        foreach ($redisPorts as $port) {
+            readData($config, $port, $aisDataCombined, $isCli);
+        }
+    } else {
+        readData($config, $port, $aisDataCombined, $isCli);
+    }
+
+
 } catch (Exception $e) {
     echo "Fehler beim Verbinden und Empfangen von Daten: <br>" . $e->getMessage();
 }
+
 ?>

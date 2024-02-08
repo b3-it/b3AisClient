@@ -180,7 +180,7 @@ class Helper
      *
      * @return array Ein Array von dekodierten Nachrichten.
      */
-    function decodeMessages($incomingArray) {
+    function decodeMessages($incomingArray, $receivedTimestamp) {
         $bitsArray = $this->processPayload($incomingArray);
 
         if (!is_array($bitsArray)) {
@@ -202,19 +202,19 @@ class Helper
                 case 1:
                 case 2:
                 case 3:
-                    $message = new Message123($messageType);
+                    $message = new Message123($messageType,$receivedTimestamp);
                     break;
                 case 5:
-                    $message = new Message5($messageType);
+                    $message = new Message5($messageType,$receivedTimestamp);
                     break;
                 case 18:
-                    $message = new Message18($messageType);
+                    $message = new Message18($messageType,$receivedTimestamp);
                     break;
                 case 19:
-                    $message = new Message19($messageType);
+                    $message = new Message19($messageType,$receivedTimestamp);
                     break;
                 case 24:
-                    $message = new Message24($messageType);
+                    $message = new Message24($messageType,$receivedTimestamp);
                     break;
                 default:
                     break;

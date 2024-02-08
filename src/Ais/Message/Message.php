@@ -22,17 +22,18 @@ class Message extends Helper
     public $timestamp;                // Zeitstempel der Nachricht
     public $messageType;              // ID des Nachrichtentyps
     public $mmsi;                     // Maritime Mobile Service Identity (MMSI) des Senders
-    public $receivedTimestamp;
+    public $receivedTimestamp;        // Zeitstempel, wann die letzte Nachricht von einem Schiff empfangen wurde
 
 
-    public function __construct($messageType)
+    public function __construct($messageType, $receivedTimestamp)
     {
         $this->messageType = $messageType;
+        $this->receivedTimestamp = $receivedTimestamp;
     }
 
     public function decode($aisdata168)
     {}
-    public function printObject(){}
+
 
 
     public function getEncodeData()

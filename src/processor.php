@@ -59,7 +59,7 @@ try {
     //LogLevel einstellen
     $logLevel = ($config->get('logLevel')) ?? Logger::INFO;
 
-    $logFile = $config->get('logFile') ?: "log.txt";
+    $logFile = $config->get('logFile') ?: "logs/log.txt";
     $logFile = __DIR__.'/'.$logFile;
     $logger->pushHandler(new StreamHandler($logFile, $logLevel));
     $dataFetcher = new DataFetcher($logger, $helper, $redisData, $config);

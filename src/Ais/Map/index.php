@@ -65,63 +65,56 @@ $aisData = $redis->read(true);
 $redis->close();
 */
 
-$redis31935 = new RedisData($config, 31935);
-$redis31935->connect();
-$aisDataBrunsbuettel = $redis31935->read(true);
-
-echo "<h1> Brunsbüttel </h1>";
-foreach ($aisDataBrunsbuettel as $data) {
-    $lat = $data->latitude;
-    $long = $data->longitude;
-    $name = $data->name;
-    $mmsi = $data->mmsi;
-    echo 'lon: '. $long . ' lat: '.  $lat.  ' name: '. $name. ' mmsi: '. $mmsi. "<br>". PHP_EOL;
-}
-
-
-$redis31935->close();
-
-$redis31936 = new RedisData($config, 31936);
-$redis31936->connect();
-$aisDataKiel = $redis31936->read(true);
-echo "<h1> Kiel </h1>";
-foreach ($aisDataKiel as $data) {
-    $lat = $data->latitude;
-    $long = $data->longitude;
-    $name = $data->name;
-    $mmsi = $data->mmsi;
-    echo 'lon: '. $long . ' lat: '.  $lat.  ' name: '. $name. ' mmsi: '. $mmsi. "<br>". PHP_EOL;
-}
-$redis31936->close();
-
-$redis31937 = new RedisData($config, 31937);
-$redis31937->connect();
-$aisDataGieselau = $redis31937->read(true);
-echo "<h1> Giselau </h1>";
-foreach ($aisDataGieselau as $data) {
-    $lat = $data->latitude;
-    $long = $data->longitude;
-    $name = $data->name;
-    $mmsi = $data->mmsi;
-    echo 'lon: '. $long . ' lat: '.  $lat.  ' name: '. $name. ' mmsi: '. $mmsi. "<br>". PHP_EOL;
-}
-$redis31937->close();
-
-$aisData = array_merge($aisDataBrunsbuettel, $aisDataKiel, $aisDataGieselau);
-
-if (empty($aisData)) {
-    echo "Keine Daten in Redis gefunden." . PHP_EOL;
-} else {
-
-    echo '<script type="module">';
-    $i = 0;
+function readAndPrintAisData($config, $port, $title)
+{
+    $redisData = new RedisData($config, $port);
+    $redisData->connect();
+    $aisData = $redisData->read(true);
+    echo "<h1>$title</h1>";
     foreach ($aisData as $data) {
         $lat = $data->latitude;
         $long = $data->longitude;
         $name = $data->name;
         $mmsi = $data->mmsi;
-//            echo "featureList[$i] =  new Feature({geometry:new Point([$long, $lat]),name:'$name', mmsi:'$mmsi'}); <br>";
-        echo "featureList[$i] = {'lon' : $long,'lat':  $lat, 'name':'$name','mmsi':'$mmsi'};". PHP_EOL;
+        $timestamp =  date('Y-m-d H:i:s', $data->receivedTimestamp);
+        echo "lon: $long lat: $lat name: $name mmsi: $mmsi receivedTimestamp: $timestamp<br>" . PHP_EOL;
+    }
+    $redisData->close();
+    return $aisData;
+}
+$redisPorts = [31935, 31936, 31937];
+$aisDataCombined = [];
+
+foreach ($redisPorts as $port) {
+    $title = '';
+    switch ($port) {
+        case 31935:
+            $title = 'Brunsbuttel';
+            break;
+        case 31936:
+            $title = 'Kiel';
+            break;
+        case 31937:
+            $title = 'Gieselau';
+            break;
+    }
+
+    $aisData = readAndPrintAisData($config, $port, $title);
+    $aisDataCombined = array_merge($aisDataCombined, $aisData);
+}
+
+if (empty($aisDataCombined)) {
+    echo "Keine Daten in Redis gefunden." . PHP_EOL;
+} else {
+    echo '<script type="module">';
+    $i = 0;
+    foreach ($aisDataCombined as $data) {
+        $lat = $data->latitude;
+        $long = $data->longitude;
+        $name = $data->name;
+        $mmsi = $data->mmsi;
+        $timestamp = $data->receivedTimestamp;
+        echo "featureList[$i] = {'lon' : $long,'lat':  $lat, 'name':'$name','mmsi':'$mmsi', 'receivedTimestamp' : '$timestamp'};" . PHP_EOL;
         $i++;
     }
     echo '</script>';
