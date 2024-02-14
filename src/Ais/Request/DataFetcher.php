@@ -77,6 +77,15 @@ class DataFetcher {
         return $sock;
     }
 
+    function closeSocket($socket) {
+        if (is_resource($socket)) {
+            fclose($socket);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Liest Daten vom Socket, dekodiert AIS-Nachrichten und schreibt die kombinierten Daten in Redis.
      *
@@ -87,7 +96,7 @@ class DataFetcher {
         try {
 
             $sock = $this->connect();
-            $data = [];
+
             $startTime = time();
             $endTime = $startTime + $this->config->get('request_duration_seconds');
             $readTimeout = 10;
@@ -106,14 +115,14 @@ class DataFetcher {
 
             $combinedData = [];
             while (time() < $endTime) {
-
+                $data = [];
                 $buffer = fread($sock, 1024);
                 $receivedTimestamp= time();
-                $this->logger->debug("Ein Array mit Daten wurde gelesen am: " . date('Y-m-d H:i:s', $receivedTimestamp));
 
                 if (!$buffer) {
                     continue;
                 }
+                $this->logger->debug("Ein Array mit Daten wurde gelesen am: " . date('Y-m-d H:i:s', $receivedTimestamp));
 
                 //Falls die Nachricht unvollständig ankommt, weil der Buffer voll ist
                 $buffer = $incompleteMessage . $buffer;
@@ -134,9 +143,8 @@ class DataFetcher {
                 //var_dump($data). PHP_EOL;
 
                 $decodedData = $this->sendDataToDecoder($data,$receivedTimestamp);
-
-
                 // Nachrichten mit nur dem Schiffsnamen und solchen mit nur geografischen Daten kombinieren.
+
                 foreach ($decodedData as $datum) {
                     $mmsi = trim($datum->mmsi);
 
@@ -161,12 +169,15 @@ class DataFetcher {
                     }
                 }
 
+
                 foreach ($combinedData as $data){
                     $this->logger->info(sprintf("Schiffe in der Schleuse: MMSI: %s Name: %s",$data->mmsi, $data->name));
                 }
                 $this->logger->info(sprintf("Letzte Nachricht von: MMSI: %s Name: %s. Empfangen am: %s",$datum->mmsi, $combinedData[$mmsi]->name, date('Y-m-d H:i:s', $receivedTimestamp)));
 
             }
+            $this->closeSocket($sock);
+
             $this->logger->notice("Lesevorgang abgeschlossen. Es wurden Daten von " . count($combinedData) . " Schiffen gelesen.");
             $this->redisData->connect();
             $this->logger->debug("Verbunden mit Redis, IP: $redisIP , Port: $redisPort " );
