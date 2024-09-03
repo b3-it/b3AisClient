@@ -87,53 +87,41 @@ class DataFetcher {
         try {
 
             $sock = $this->connect();
-            $data = [];
             $startTime = time();
             $endTime = $startTime + $this->config->get('request_duration_seconds');
-            $readTimeout = 10;
             $incompleteMessage = ''; // Unvollständige Nachrichten, die im vorherigen Durchlauf empfangen wurden
             $redisIP = $this->redisData->getIP();
             $redisPort = $this->redisData->getPort();
+            $combinedData = [];
 
-            stream_set_timeout($sock, $readTimeout);
+            stream_set_timeout($sock, 10);
 
-            $info = stream_get_meta_data($sock);
-            if ($info['timed_out']) {
-                $loggingText = 'Timeout beim Lesem vom Socket.';
+            if (stream_get_meta_data($sock)['timed_out']) {
+                $loggingText = 'Timeout beim Lesen vom Socket.';
                 $this->logger->critical($loggingText);
                 throw new Exception($loggingText);
             }
 
-            $combinedData = [];
             while (time() < $endTime) {
 
                 $buffer = fread($sock, 1024);
                 $receivedTimestamp= time();
-                $this->logger->debug("Ein Array mit Daten wurde gelesen am: " . date('Y-m-d H:i:s', $receivedTimestamp));
 
-                if (!$buffer) {
+
+                if ($buffer === false || $buffer === '') {
                     continue;
                 }
 
+                $this->logger->debug("Daten gelesen am: " . date('Y-m-d H:i:s', $receivedTimestamp));
                 //Falls die Nachricht unvollständig ankommt, weil der Buffer voll ist
                 $buffer = $incompleteMessage . $buffer;
 
-                $data = explode("\n", $buffer);
-
-                $incompleteMessage = '';
-
+                $messages = explode("\n", $buffer);
                 // Falls die letzte Zeile nicht leer ist, handelt es sich um eine unvollständige Nachricht
-                if (end($data) !== '') {
-                    $incompleteMessage = array_pop($data);
-                }
+                $incompleteMessage = end($messages) === '' ? '' : array_pop($messages);
 
-                $data = array_filter($data, 'strlen'); // Leere Zeilen aus den Nachrichten entfernen
-
-                $this->logger->debug('Array von empfangenen Daten: ' . json_encode($data));
-                //echo "Array von empfangenen Daten: ". PHP_EOL;
-                //var_dump($data). PHP_EOL;
-
-                $decodedData = $this->sendDataToDecoder($data,$receivedTimestamp);
+                $this->logger->debug('Empfangene Nachrichten im aktuellen Puffer: ' . json_encode($messages));
+                $decodedData = $this->sendDataToDecoder(array_filter($messages, 'strlen'), $receivedTimestamp);
 
 
                 // Nachrichten mit nur dem Schiffsnamen und solchen mit nur geografischen Daten kombinieren.
@@ -161,11 +149,15 @@ class DataFetcher {
                     }
                 }
 
-                foreach ($combinedData as $data){
-                    $this->logger->info(sprintf("Schiffe in der Schleuse: MMSI: %s Name: %s",$data->mmsi, $data->name));
-                }
-                $this->logger->info(sprintf("Letzte Nachricht von: MMSI: %s Name: %s. Empfangen am: %s",$datum->mmsi, $combinedData[$mmsi]->name, date('Y-m-d H:i:s', $receivedTimestamp)));
 
+                if (!empty($datum->mmsi)) {
+                    $this->logger->info(sprintf(
+                        "Letzte Nachricht von: MMSI: %s Name: %s. Empfangen am: %s",
+                        $datum->mmsi,
+                        $combinedData[$datum->mmsi]->name ?? 'Unbekannt',
+                        date('Y-m-d H:i:s', $receivedTimestamp)
+                    ));
+                }
             }
             $this->logger->notice("Lesevorgang abgeschlossen. Es wurden Daten von " . count($combinedData) . " Schiffen gelesen.");
             $this->redisData->connect();
@@ -270,4 +262,3 @@ class DataFetcher {
 
 }
 
-?>
