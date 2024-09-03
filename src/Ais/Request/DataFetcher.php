@@ -77,6 +77,15 @@ class DataFetcher {
         return $sock;
     }
 
+    function closeSocket($socket) {
+        if (is_resource($socket)) {
+            fclose($socket);
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Liest Daten vom Socket, dekodiert AIS-Nachrichten und schreibt die kombinierten Daten in Redis.
      *
@@ -90,8 +99,6 @@ class DataFetcher {
             $startTime = time();
             $endTime = $startTime + $this->config->get('request_duration_seconds');
             $incompleteMessage = ''; // Unvollständige Nachrichten, die im vorherigen Durchlauf empfangen wurden
-            $redisIP = $this->redisData->getIP();
-            $redisPort = $this->redisData->getPort();
             $combinedData = [];
 
             stream_set_timeout($sock, 10);
@@ -107,8 +114,7 @@ class DataFetcher {
                 $buffer = fread($sock, 1024);
                 $receivedTimestamp= time();
 
-
-                if ($buffer === false || $buffer === '') {
+                if (!$buffer) {
                     continue;
                 }
 
@@ -158,15 +164,11 @@ class DataFetcher {
                         date('Y-m-d H:i:s', $receivedTimestamp)
                     ));
                 }
+
             }
+            $this->closeSocket($sock);
             $this->logger->notice("Lesevorgang abgeschlossen. Es wurden Daten von " . count($combinedData) . " Schiffen gelesen.");
-            $this->redisData->connect();
-            $this->logger->debug("Verbunden mit Redis, IP: $redisIP , Port: $redisPort " );
-            $this->redisData->clear();
-            $this->redisData->write($combinedData);
-            $this->logger->info("Daten in Redis geschrieben...");
-            $this->redisData->close();
-            $this->logger->info("Prozess beendet. Status: OK");
+            $this->storeDataInRedis($combinedData);
 
 
 
@@ -198,6 +200,26 @@ class DataFetcher {
             return [];
         }
 
+    }
+
+    /**
+     * Speichert die kombinierten Daten in Redis.
+     *
+     * @param array $combinedData Die zu speichernden Daten.
+     */
+    private function storeDataInRedis(array $combinedData)
+    {
+        try {
+            $this->redisData->connect();
+            $this->logger->debug("Verbunden mit Redis, IP: {$this->redisData->getIP()}, Port: {$this->redisData->getPort()}");
+            $this->redisData->clear();
+            $this->redisData->write($combinedData);
+            $this->logger->info("Daten erfolgreich in Redis geschrieben.");
+            $this->redisData->close();
+            $this->logger->info("Redis-Verbindung geschlossen.");
+        } catch (Exception $e) {
+            $this->logger->error('Fehler beim Schreiben der Daten in Redis: ' . $e->getMessage());
+        }
     }
 
     public function setIp($ip) {
@@ -262,3 +284,4 @@ class DataFetcher {
 
 }
 
+?>
