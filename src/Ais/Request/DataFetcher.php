@@ -205,17 +205,21 @@ class DataFetcher {
     }
 
     /**
-     * Speichert die kombinierten Daten in Redis.
+     * Speichert die kombinierten Daten in Redis. Ohne empfangene Schiffe bleiben die bisherigen Daten erhalten.
      *
      * @param array $combinedData Die zu speichernden Daten.
      */
     private function storeDataInRedis(array $combinedData)
     {
+        if (empty($combinedData)) {
+            $this->logger->warning("Keine Schiffsdaten empfangen, die bisherigen Daten in Redis bleiben erhalten.");
+            return;
+        }
+
         try {
             $this->redisData->connect();
             $this->logger->debug("Verbunden mit Redis, IP: {$this->redisData->getIP()}, Port: {$this->redisData->getPort()}");
-            $this->redisData->clear();
-            $this->redisData->write($combinedData);
+            $this->redisData->replace($combinedData);
             $this->logger->info("Daten erfolgreich in Redis geschrieben.");
             $this->redisData->close();
             $this->logger->info("Redis-Verbindung geschlossen.");

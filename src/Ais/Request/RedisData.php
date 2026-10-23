@@ -49,22 +49,6 @@ class RedisData
     }
 
     /**
-     * Löscht alle Daten, die mit dem aktuellen Daten-Key in Redis verknüpft sind.
-     *
-     * @throws \Exception Wenn ein Fehler beim Löschen von Daten in Redis auftritt.
-     */
-    public function clear()
-    {
-        try {
-            if ($this->_redis != null) {
-                $this->_redis->del($this->getDataKey());
-            }
-        } catch (\Exception $e) {
-            throw new \Exception('Fehler beim Löschen von Daten in Redis: '. $e->getMessage());
-        }
-    }
-
-    /**
      * Schließt die Verbindung zum Redis-Server.
      *
      * @throws \Exception Wenn ein Fehler beim Schließen der Verbindung zu Redis auftritt.
@@ -83,22 +67,31 @@ class RedisData
     }
 
     /**
-     * Schreibt Daten in Redis, entweder als einzelnes Objekt oder als Array von Objekten.
+     * Ersetzt alle Daten unter dem aktuellen Daten-Key in einer Transaktion. Lesende Zugriffe sehen
+     * dadurch entweder die alten oder die neuen Daten, aber nie eine leere oder unvollständige Liste.
      *
-     * @param mixed $data Die zu schreibenden Daten.
+     * @param array $data Die zu schreibenden Objekte.
      * @throws \Exception Wenn ein Fehler beim Schreiben von Daten in Redis auftritt.
      */
-    public function write($data){
+    public function replace(array $data)
+    {
         try {
-            if (is_array($data)) {
-                foreach ($data as $d) {
-                    $this->_redis->rpush($this->getDataKey(), $d->getEncodeData());
-                }
-            } else {
-                $this->_redis->rpush($this->getDataKey(), $data->getEncodeData());
+            $values = [];
+            foreach ($data as $d) {
+                $values[] = $d->getEncodeData();
+            }
+
+            $this->_redis->multi();
+            $this->_redis->del($this->getDataKey());
+            if (!empty($values)) {
+                $this->_redis->rpush($this->getDataKey(), ...$values);
+            }
+
+            if ($this->_redis->exec() === false) {
+                throw new \Exception('Transaktion wurde nicht ausgeführt.');
             }
         } catch (\Exception $e) {
-            throw new \Exception('Fehler beim Schreiben von Daten in Redis: ' . $e->getMessage());
+            throw new \Exception('Fehler beim Ersetzen von Daten in Redis: ' . $e->getMessage());
         }
     }
 
