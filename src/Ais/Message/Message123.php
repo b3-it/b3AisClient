@@ -21,8 +21,7 @@ class Message123 extends Message
     {
 
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
-        $this->longitude = $this->convertToLongitude(bindec(substr($aisdata168, 61, 28)));
-        $this->latitude = $this->convertToLatitude(bindec(substr($aisdata168, 89, 27)));
+        $this->setPosition(bindec(substr($aisdata168, 61, 28)), bindec(substr($aisdata168, 89, 27)));
 
         return $this;
     }

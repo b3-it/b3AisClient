@@ -33,6 +33,28 @@ abstract class Message extends Helper
 
     abstract public function decode($aisdata168);
 
+    /**
+     * Setzt die Position aus den Rohwerten. AIS sendet 181° (Längengrad) bzw. 91° (Breitengrad),
+     * wenn keine Position verfügbar ist. In diesem Fall oder bei ungültigen Werten bleibt die Position null.
+     *
+     * @param int $longitudeValue - Der Rohwert des Längengrads (28 Bit).
+     * @param int $latitudeValue - Der Rohwert des Breitengrads (27 Bit).
+     */
+    protected function setPosition($longitudeValue, $latitudeValue)
+    {
+        $longitude = $this->convertToLongitude($longitudeValue);
+        $latitude = $this->convertToLatitude($latitudeValue);
+
+        if (abs($longitude) > 180 || abs($latitude) > 90) {
+            $this->longitude = null;
+            $this->latitude = null;
+            return;
+        }
+
+        $this->longitude = $longitude;
+        $this->latitude = $latitude;
+    }
+
     public function getEncodeData()
     {
         $res = [];

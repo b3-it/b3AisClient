@@ -92,6 +92,23 @@ class DecoderTest extends TestCase
         $this->assertEqualsWithDelta(40.68454, $result[0]->latitude, 0.000001);
     }
 
+    public function testUnavailablePositionIsNull()
+    {
+        // Nachricht vom Typ 18 mit Längengrad 181° und Breitengrad 91° (Position nicht verfügbar)
+        $bits = str_pad(decbin(18), 6, '0', STR_PAD_LEFT) . '00'
+            . str_pad(decbin(211000000), 30, '0', STR_PAD_LEFT)
+            . str_repeat('0', 19)
+            . str_pad(decbin(181 * 600000), 28, '0', STR_PAD_LEFT)
+            . str_pad(decbin(91 * 600000), 27, '0', STR_PAD_LEFT)
+            . str_repeat('0', 56);
+
+        $result = (new Message18(18, self::RECEIVED_TIMESTAMP))->decode($bits);
+
+        $this->assertSame(211000000, $result->mmsi);
+        $this->assertNull($result->longitude);
+        $this->assertNull($result->latitude);
+    }
+
     public function testDecodeMessageType24PartA()
     {
         $result = $this->helper->decodeMessages(
