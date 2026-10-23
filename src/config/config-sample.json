@@ -5,9 +5,9 @@
   "request_duration_seconds": 30,
 
   "sources": [
-    { "port": 31935, "name": "Brunsbüttel" },
-    { "port": 31936, "name": "Kiel" },
-    { "port": 31937, "name": "Gieselau" }
+    { "port": 31935, "name": "Lock 1" },
+    { "port": 31936, "name": "Lock 2" },
+    { "port": 31937, "name": "Lock 3" }
   ],
 
   "logLevel" : 300,
