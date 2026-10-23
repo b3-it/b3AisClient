@@ -14,6 +14,10 @@ class DecoderTest extends TestCase
 {
     private const RECEIVED_TIMESTAMP = 1700000000;
 
+    // Nutzdaten einer zweiteiligen Nachricht vom Typ 5 (MMSI 351759000, Name "EVER DIADEM")
+    private const TYPE5_PART1 = '55?MbV02;H;s<HtKR20EHE:0@T4@Dn2222222216L961O5Gf0NSQEp6ClRp8';
+    private const TYPE5_PART2 = '88888888880';
+
     private Helper $helper;
 
     protected function setUp(): void
@@ -68,6 +72,54 @@ class DecoderTest extends TestCase
         $this->assertSame('EVER DIADEM', $result[0]->name);
         $this->assertNull($result[0]->longitude);
         $this->assertNull($result[0]->latitude);
+    }
+
+    public function testDecodeMultipartMessageSplitAcrossCalls()
+    {
+        // Die Segmente kommen in unterschiedlichen Lesepuffern an
+        $this->expectOutputRegex('/Warnung/');
+
+        $first = $this->helper->decodeMessages([$this->createSentence(2, 1, '1', 'A', self::TYPE5_PART1, 0)], self::RECEIVED_TIMESTAMP);
+        $second = $this->helper->decodeMessages([$this->createSentence(2, 2, '1', 'A', self::TYPE5_PART2, 2)], self::RECEIVED_TIMESTAMP);
+
+        $this->assertSame([], $first);
+        $this->assertCount(1, $second);
+        $this->assertSame('EVER DIADEM', $second[0]->name);
+    }
+
+    public function testDecodeInterleavedMultipartMessages()
+    {
+        // Zwei mehrteilige Nachrichten mit unterschiedlicher Nachrichten-ID, deren Segmente sich abwechseln
+        $result = $this->helper->decodeMessages(
+            [
+                $this->createSentence(2, 1, '1', 'A', self::TYPE5_PART1, 0),
+                $this->createSentence(2, 1, '2', 'A', self::TYPE5_PART1, 0),
+                $this->createSentence(2, 2, '1', 'A', self::TYPE5_PART2, 2),
+                $this->createSentence(2, 2, '2', 'A', self::TYPE5_PART2, 2),
+            ],
+            self::RECEIVED_TIMESTAMP
+        );
+
+        $this->assertCount(2, $result);
+        $this->assertSame('EVER DIADEM', $result[0]->name);
+        $this->assertSame('EVER DIADEM', $result[1]->name);
+    }
+
+    public function testIncompleteMultipartMessageIsDiscarded()
+    {
+        // Das zweite Segment der ersten Nachricht fehlt, die nächste Nachricht verwendet dieselbe ID
+        $result = $this->helper->decodeMessages(
+            [
+                $this->createSentence(2, 1, '1', 'A', 'BROKEN', 0),
+                $this->createSentence(2, 1, '1', 'A', self::TYPE5_PART1, 0),
+                $this->createSentence(2, 2, '1', 'A', self::TYPE5_PART2, 2),
+            ],
+            self::RECEIVED_TIMESTAMP
+        );
+
+        $this->assertCount(1, $result);
+        $this->assertSame(351759000, $result[0]->mmsi);
+        $this->assertSame('EVER DIADEM', $result[0]->name);
     }
 
     public function testConvertBinaryToShipNameRemovesPadding()
@@ -161,6 +213,21 @@ class DecoderTest extends TestCase
         $this->assertSame(['name', 'longitude', 'latitude', 'receivedTimestamp', 'mmsi'], array_keys($data));
         $this->assertSame(477553000, $data['mmsi']);
         $this->assertSame(self::RECEIVED_TIMESTAMP, $data['receivedTimestamp']);
+    }
+
+    /**
+     * Erzeugt einen AIVDM-Satz mit gültiger Prüfsumme.
+     */
+    private function createSentence($total, $sequence, $messageId, $channel, $payload, $fillBits)
+    {
+        $body = "AIVDM,$total,$sequence,$messageId,$channel,$payload,$fillBits";
+        $checksum = 0;
+
+        foreach (str_split($body) as $char) {
+            $checksum ^= ord($char);
+        }
+
+        return sprintf('!%s*%02X', $body, $checksum);
     }
 
 }

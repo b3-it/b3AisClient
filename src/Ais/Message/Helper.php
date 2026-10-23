@@ -21,6 +21,12 @@ require_once('Message24.php');
  */
 class Helper
 {
+    /**
+     * Noch unvollständige mehrteilige Nachrichten, gruppiert nach Nachrichten-ID und Kanal.
+     *
+     * @var array<string, array{total: int, parts: array<int, string>}>
+     */
+    private $pendingFragments = [];
 
 
     /**
@@ -378,7 +384,6 @@ class Helper
 
             $mergedPayload = [];
 
-            $reihenfolgeArray = [];
             foreach ($cleanedArray as $cleanedLine) {
 
                 if ($this->calculateAISChecksum($cleanedLine)) {
@@ -388,21 +393,30 @@ class Helper
                     if (count($cleanedLineExploded) >= 6) {
                         $numSequences = (int) $cleanedLineExploded[1];
                         $sequenceNumber = (int) $cleanedLineExploded[2];
-                        $messageId = ($cleanedLineExploded[3] == '') ? -1 : (int) $cleanedLineExploded[3];
                         $payload = $cleanedLineExploded[5];
 
                         if ($numSequences == 1) {
                             $mergedPayload[] = $payload;
                         } else {
-                            // Wenn es mehrere Segmente gibt, jedem Payload die SeqNum zuweisen und anschließend sortieren
+                            // Segmente werden pro Nachrichten-ID und Kanal gesammelt, auch über mehrere Aufrufe hinweg
                             if ($sequenceNumber >= 1 && $sequenceNumber <= $numSequences) {
-                                $reihenfolgeArray[$sequenceNumber] = $payload;
+                                $fragmentKey = $cleanedLineExploded[3] . '|' . $cleanedLineExploded[4];
+                                $fragment = $this->pendingFragments[$fragmentKey] ?? null;
+
+                                // Neue Nachricht mit derselben ID: unvollständige Segmente der vorherigen Nachricht verwerfen
+                                if ($fragment === null || $fragment['total'] !== $numSequences || isset($fragment['parts'][$sequenceNumber])) {
+                                    $fragment = ['total' => $numSequences, 'parts' => []];
+                                }
+
+                                $fragment['parts'][$sequenceNumber] = $payload;
 
                                 // Wenn alle Segmente gesammelt sind, kombinieren
-                                if (count($reihenfolgeArray) === $numSequences) {
-                                    ksort($reihenfolgeArray); // Das Array sortieren, falls die Reihenfolge nicht aufeinanderfolgend ist
-                                    $mergedPayload[] = implode('', $reihenfolgeArray);
-                                    $reihenfolgeArray = [];
+                                if (count($fragment['parts']) === $numSequences) {
+                                    ksort($fragment['parts']); // Das Array sortieren, falls die Reihenfolge nicht aufeinanderfolgend ist
+                                    $mergedPayload[] = implode('', $fragment['parts']);
+                                    unset($this->pendingFragments[$fragmentKey]);
+                                } else {
+                                    $this->pendingFragments[$fragmentKey] = $fragment;
                                 }
                             }
                         }
