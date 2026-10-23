@@ -36,7 +36,7 @@ try {
             echo $isCli ? "Schiff " . ($index + 1) . PHP_EOL : "<br><li>Schiff " . ($index + 1) . "<br>";
 
             foreach ($arrayData as $key => $value) {
-                echo $isCli ? "  $key: " . print_r($value, true) . PHP_EOL : "<br>&nbsp;&nbsp;<strong>$key</strong> => " . print_r($value, true);
+                echo $isCli ? "  $key: " . print_r($value, true) . PHP_EOL : "<br>&nbsp;&nbsp;<strong>" . htmlspecialchars($key, ENT_QUOTES) . "</strong> => " . htmlspecialchars(print_r($value, true), ENT_QUOTES);
             }
 
             echo $isCli ? "-----------------" . PHP_EOL : "</li>";

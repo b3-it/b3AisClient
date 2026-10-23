@@ -74,8 +74,8 @@ function readAndPrintAisData($config, $port, $title)
     foreach ($aisData as $data) {
         $lat = $data->latitude;
         $long = $data->longitude;
-        $name = $data->name;
-        $mmsi = $data->mmsi;
+        $name = htmlspecialchars($data->name, ENT_QUOTES);
+        $mmsi = htmlspecialchars($data->mmsi, ENT_QUOTES);
         $timestamp =  date('Y-m-d H:i:s', $data->receivedTimestamp);
         echo "lon: $long lat: $lat name: $name mmsi: $mmsi receivedTimestamp: $timestamp<br>" . PHP_EOL;
     }
@@ -109,12 +109,21 @@ if (empty($aisDataCombined)) {
     echo '<script type="module">';
     $i = 0;
     foreach ($aisDataCombined as $data) {
-        $lat = $data->latitude;
-        $long = $data->longitude;
-        $name = $data->name;
-        $mmsi = $data->mmsi;
-        $timestamp = $data->receivedTimestamp;
-        echo "featureList[$i] = {'lon' : $long,'lat':  $lat, 'name':'$name','mmsi':'$mmsi', 'receivedTimestamp' : '$timestamp'};" . PHP_EOL;
+        // Schiffe ohne Position (nur Name empfangen) können nicht auf der Karte dargestellt werden
+        if (!is_numeric($data->longitude) || !is_numeric($data->latitude)) {
+            continue;
+        }
+
+        $feature = [
+            'lon' => (float)$data->longitude,
+            'lat' => (float)$data->latitude,
+            'name' => (string)$data->name,
+            'mmsi' => (string)$data->mmsi,
+            'receivedTimestamp' => (string)$data->receivedTimestamp,
+        ];
+        // JSON_HEX_* verhindert, dass Zeichen aus dem Schiffsnamen das Script-Tag oder den String verlassen
+        $json = json_encode($feature, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP);
+        echo "featureList[$i] = $json;" . PHP_EOL;
         $i++;
     }
     echo '</script>';
