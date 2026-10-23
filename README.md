@@ -85,6 +85,11 @@ mkdir -p src/logs
   "redis_ip": "127.0.0.1",
   "redis_port": "6379",
   "request_duration_seconds": 30,
+  "sources": [
+    { "port": 31935, "name": "Brunsbüttel" },
+    { "port": 31936, "name": "Kiel" },
+    { "port": 31937, "name": "Gieselau" }
+  ],
   "logLevel": 100
 }
 ```
@@ -95,7 +100,10 @@ mkdir -p src/logs
 | `redis_ip`                 | Redis host                                                         | `127.0.0.1`     |
 | `redis_port`               | Redis port                                                         | `6379`          |
 | `request_duration_seconds` | How long (in seconds) data is collected from the socket per run    | –               |
+| `sources`                  | AIS source ports and their display names (see below)               | –               |
 | `logLevel`                 | Monolog log level (see table below)                                | `200` (INFO)    |
+
+`sources` is the central list of AIS source ports. `start_processor.sh` starts one processor per port, `viewer.php` only accepts these ports, and the map shows one section per source with its `name` as heading. The port is also used in the Redis key `ais_data_<port>`.
 
 Log levels: `100` DEBUG, `200` INFO, `250` NOTICE, `300` WARNING, `400` ERROR, `500` CRITICAL, `550` ALERT, `600` EMERGENCY.
 Errors are additionally written to `stderr`.
@@ -112,7 +120,7 @@ php src/processor.php --ip <source-ip> --port <source-port>
 
 The processor can only be run from the command line. Called through a web server, it responds with HTTP 403, as it would otherwise allow visitors to open connections to arbitrary addresses.
 
-To query several ports of a source in parallel, use `src/start_processor.sh` and pass the source IP as an argument. The ports are defined in the `ports` and `count` variables of the script:
+To query all configured ports of a source in parallel, use `src/start_processor.sh` and pass the source IP as an argument. The ports are read from `sources` in `config.json`:
 
 ```bash
 ./src/start_processor.sh <source-ip>
@@ -132,13 +140,11 @@ Print the stored vessel data for one source:
 php src/viewer.php --port 31935
 ```
 
-Without `--port`, all configured sources are printed. In the browser use `viewer.php?port=31935`.
+Without `--port`, all configured sources are printed. In the browser use `viewer.php?port=31935`. Only ports listed in `sources` are accepted.
 
 ### Map view
 
-`src/Ais/Map/index.php` renders the stored vessels on an OpenLayers map (pre-built bundle in `src/Ais/Map/assets/`). Serve the `src/` directory with a PHP-capable web server and open `Ais/Map/index.php`.
-
-> **Note:** The source ports `31935`, `31936` and `31937` and their location names are currently hard-coded in `viewer.php` and `Ais/Map/index.php`. Adapt them if you use different sources.
+`src/Ais/Map/index.php` renders the stored vessels of all configured sources on an OpenLayers map (pre-built bundle in `src/Ais/Map/assets/`). Serve the `src/` directory with a PHP-capable web server and open `Ais/Map/index.php`.
 
 ## Redis data format
 

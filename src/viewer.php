@@ -19,13 +19,15 @@ try {
 
     $port = $requestHandler->getPortViewer();
 
-    if ($port !== null && !filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]])) {
+    /** @var array $aisDataSrcPorts Used as key postfix in redis*/
+    $aisDataSrcPorts = array_keys($config->getSources());
+
+    // Nur konfigurierte Ports zulassen
+    if ($port !== null && !in_array(filter_var($port, FILTER_VALIDATE_INT), $aisDataSrcPorts, true)) {
         echo "Ungültiger Port." . PHP_EOL;
         exit(1);
     }
 
-    /** @var array $aisDataSrcPorts Used as key postfix in redis*/
-    $aisDataSrcPorts = [31935, 31936, 31937];
     $aisDataCombined = [];
 
     function readData($config, $port, &$aisDataCombined, $isCli)

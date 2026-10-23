@@ -28,6 +28,29 @@ class Config
     {
         return $this->config[$key] ?? null;
     }
+
+    /**
+     * Gibt die konfigurierten AIS-Quellen zurück. Der Port wird auch als Postfix des Redis-Keys verwendet.
+     *
+     * @return array<int, string> Die Quellen als Port => Name.
+     * @throws \Exception Wenn ein Port in der Konfiguration ungültig ist.
+     */
+    public function getSources()
+    {
+        $sources = [];
+
+        foreach ($this->get('sources') ?? [] as $source) {
+            $port = filter_var($source['port'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]]);
+
+            if ($port === false) {
+                throw new \Exception('Ungültiger Port in der Konfiguration: ' . json_encode($source));
+            }
+
+            $sources[$port] = (string)($source['name'] ?? $port);
+        }
+
+        return $sources;
+    }
 }
 
 

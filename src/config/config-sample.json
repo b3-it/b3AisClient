@@ -4,6 +4,12 @@
   "redis_port" : "6379",
   "request_duration_seconds": 30,
 
+  "sources": [
+    { "port": 31935, "name": "Brunsbüttel" },
+    { "port": 31936, "name": "Kiel" },
+    { "port": 31937, "name": "Gieselau" }
+  ],
+
   "logLevel" : 300,
 
   "_comments_logLevels": {

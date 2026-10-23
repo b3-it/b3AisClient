@@ -70,7 +70,7 @@ function readAndPrintAisData($config, $port, $title)
     $redisData = new RedisData($config, $port);
     $redisData->connect();
     $aisData = $redisData->read(true);
-    echo "<h1>$title</h1>";
+    echo "<h1>" . htmlspecialchars($title, ENT_QUOTES) . "</h1>";
     foreach ($aisData as $data) {
         $lat = $data->latitude;
         $long = $data->longitude;
@@ -82,23 +82,9 @@ function readAndPrintAisData($config, $port, $title)
     $redisData->close();
     return $aisData;
 }
-$aisDataSrcPorts = [31935, 31936, 31937];
 $aisDataCombined = [];
 
-foreach ($aisDataSrcPorts as $port) {
-    $title = '';
-    switch ($port) {
-        case 31935:
-            $title = 'Brunsbuttel';
-            break;
-        case 31936:
-            $title = 'Kiel';
-            break;
-        case 31937:
-            $title = 'Gieselau';
-            break;
-    }
-
+foreach ($config->getSources() as $port => $title) {
     $aisData = readAndPrintAisData($config, $port, $title);
     $aisDataCombined = array_merge($aisDataCombined, $aisData);
 }
