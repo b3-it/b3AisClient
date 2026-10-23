@@ -1,4 +1,6 @@
 {
+  "name": "b3it/ais-client",
+  "description": "A lightweight PHP client that receives raw **AIS** (Automatic Identification System) data from TCP sources",
   "require": {
     "ext-redis": "*",
     "monolog/monolog": "2.* | 3.*",
