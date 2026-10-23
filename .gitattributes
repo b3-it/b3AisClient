@@ -1,0 +1,2 @@
+# Alle Textdateien mit Unix-Zeilenenden (LF) speichern
+* text=auto eol=lf
