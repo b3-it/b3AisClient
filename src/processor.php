@@ -11,6 +11,12 @@ use Exception;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
 
+// Der Prozessor baut Verbindungen zu beliebigen Adressen auf und darf daher nur über die Befehlszeile laufen
+if (php_sapi_name() !== 'cli') {
+    http_response_code(403);
+    exit;
+}
+
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
@@ -39,7 +45,9 @@ spl_autoload_register( function ($class) {
 try {
     // Request-Handler erstellen und Argumente (IP, Port) einselen
     $requestHandler = new requestHandler();
-    $requestHandler->parseArguments();
+    if (!$requestHandler->parseArguments()) {
+        exit(1);
+    }
 
     $ip = $requestHandler->getIP();
     $port = $requestHandler->getPort();

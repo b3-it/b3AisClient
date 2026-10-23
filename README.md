@@ -110,11 +110,7 @@ Run the processor for a single AIS source:
 php src/processor.php --ip <source-ip> --port <source-port>
 ```
 
-The script can also be called through a web server:
-
-```
-http://example.com/processor.php?ip=<source-ip>&port=<source-port>
-```
+The processor can only be run from the command line. Called through a web server, it responds with HTTP 403, as it would otherwise allow visitors to open connections to arbitrary addresses.
 
 To query several ports of a source in parallel, use `src/start_processor.sh` and pass the source IP as an argument. The ports are defined in the `ports` and `count` variables of the script:
 
