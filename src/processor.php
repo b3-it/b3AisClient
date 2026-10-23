@@ -59,9 +59,10 @@ try {
     //LogLevel einstellen
     $logLevel = ($config->get('logLevel')) ?? Logger::INFO;
 
-    $logFile = $config->get('logFile') ?: "logs/log.txt";
+    $logFile = $config->get('logFile') ?: "logs/ais.log";
     $logFile = __DIR__.'/'.$logFile;
     $logger->pushHandler(new StreamHandler($logFile, $logLevel));
+    $logger->pushHandler(new StreamHandler('php://stderr', Logger::ERROR));
     $dataFetcher = new DataFetcher($logger, $helper, $redisData, $config);
     $dataFetcher->setIp($ip);
     $dataFetcher->setPort($port);
