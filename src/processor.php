@@ -67,10 +67,6 @@ try {
     $dataFetcher->setIp($ip);
     $dataFetcher->setPort($port);
     $dataFetcher->fetchAndSendToRedis();
-
-
-
-
 } catch (Exception $e) {
     echo "Fehler beim Verbinden und Empfangen von Daten: \n" . $e->getMessage();
 }

@@ -8,7 +8,7 @@ namespace Ais\Message;
  * darstellen, wie Name, Geschwindigkeit über Grund, Kurs über Grund, Längengrad, Breitengrad,
  * Zeitstempel, ID und MMSI (Maritime Mobile Service Identity).
  */
-class Message extends Helper
+abstract class Message extends Helper
 {
 
     //public $channel = 0; Indikator für nicht dekodierte Nachricht, AIS-Klasse nicht definiert
@@ -31,10 +31,7 @@ class Message extends Helper
         $this->receivedTimestamp = $receivedTimestamp;
     }
 
-    public function decode($aisdata168)
-    {}
-
-
+    abstract public function decode($aisdata168);
 
     public function getEncodeData()
     {
