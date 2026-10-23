@@ -1,7 +1,11 @@
 #!/bin/bash
 
+if [ -z "$1" ]; then
+    echo "Aufruf: $0 <ip>"
+    exit 1
+fi
 
-ip="172.30.11.225"
+ip="$1"
 ports=(31935 31936 31937)
 count=3
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
