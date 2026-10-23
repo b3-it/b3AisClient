@@ -137,8 +137,7 @@ class DataFetcher {
                     if (isset($combinedData[$mmsi])) {
                         // Falls das Schiff bereits im kombinierten Array vorhanden ist, aktualisiere die Daten
                         if (!empty($datum->name)) {
-                            $cleanedName = $this->clearShipsName($datum->name);
-                            $combinedData[$mmsi]->name =  trim($cleanedName);
+                            $combinedData[$mmsi]->name = $datum->name;
                         }
                         if (!is_null($datum->longitude)) {
                             $combinedData[$mmsi]->longitude = $datum->longitude;
@@ -229,20 +228,6 @@ class DataFetcher {
     public function setPort($port)
     {
         $this->port = $port;
-    }
-
-    /**
-     * Bereinigt den Namen des Schiffs.
-     *
-     * @param string $name Der zu bereinigende Name.
-     * @return string Der bereinigte Name.
-     */
-    function clearShipsName($name)
-    {
-        if (strpos($name, "@") !== false && !empty($name)) {
-            return str_replace("@", "", $name);
-        }
-        return $name;
     }
 
     /**

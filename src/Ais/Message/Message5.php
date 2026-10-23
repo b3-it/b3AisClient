@@ -17,7 +17,7 @@ class Message5 extends Message
     public function decode($aisdata168)
     {
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
-        $this->name = $this->convertBinaryToAISChars($aisdata168, 112, 120);
+        $this->name = $this->convertBinaryToShipName($aisdata168, 112, 120);
         return $this;
     }
 

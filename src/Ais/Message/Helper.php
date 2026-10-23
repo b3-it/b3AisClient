@@ -170,6 +170,20 @@ class Helper
         return $convertedString;
     }
 
+    /**
+     * Konvertiert eine binäre Zeichenfolge in einen Schiffsnamen und entfernt die Füllzeichen ('@' und Leerzeichen).
+     *
+     * @param string $binaryString - Die binäre Zeichenfolge, die konvertiert werden soll.
+     * @param int $startIndex - Der Startindex in der binären Zeichenfolge.
+     * @param int $partSize - Die Größe des zu konvertierenden Teils der binären Zeichenfolge (muss durch 6 teilbar sein).
+     * @return string - Der bereinigte Schiffsname.
+     */
+    function convertBinaryToShipName($binaryString, $startIndex, $partSize) {
+        $name = $this->convertBinaryToAISChars($binaryString, $startIndex, $partSize);
+
+        return trim(str_replace('@', '', $name));
+    }
+
 
     /**
      *
