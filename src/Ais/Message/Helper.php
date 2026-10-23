@@ -4,14 +4,6 @@ namespace Ais\Message;
 
 use Exception;
 
-require_once('Message.php');
-require_once('Message123.php');
-require_once('Message5.php');
-require_once('Message18.php');
-require_once('Message19.php');
-require_once('Message24.php');
-
-
 
 /**
  * Die Klasse Helper enthält eine Sammlung von Hilfsfunktionen, die zur Dekodierung von AIS-Nachrichten
