@@ -103,18 +103,21 @@ class DataFetcher {
 
             stream_set_timeout($sock, 10);
 
-            if (stream_get_meta_data($sock)['timed_out']) {
-                $loggingText = 'Timeout beim Lesen vom Socket.';
-                $this->logger->critical($loggingText);
-                throw new Exception($loggingText);
-            }
-
             while (time() < $endTime) {
 
                 $buffer = fread($sock, 1024);
                 $receivedTimestamp= time();
 
-                if (!$buffer) {
+                if ($buffer === false || $buffer === '') {
+                    // Ohne diese Prüfung liefe die Schleife nach dem Schließen der Verbindung ohne Pause weiter
+                    if (feof($sock)) {
+                        $this->logger->warning('Verbindung wurde von der Gegenstelle geschlossen.');
+                        break;
+                    }
+
+                    if (stream_get_meta_data($sock)['timed_out']) {
+                        $this->logger->debug('Timeout beim Lesen vom Socket, keine Daten empfangen.');
+                    }
                     continue;
                 }
 
