@@ -82,10 +82,10 @@ function readAndPrintAisData($config, $port, $title)
     $redisData->close();
     return $aisData;
 }
-$redisPorts = [31935, 31936, 31937];
+$aisDataSrcPorts = [31935, 31936, 31937];
 $aisDataCombined = [];
 
-foreach ($redisPorts as $port) {
+foreach ($aisDataSrcPorts as $port) {
     $title = '';
     switch ($port) {
         case 31935:

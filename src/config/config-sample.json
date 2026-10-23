@@ -1,11 +1,10 @@
 {
-
-  "logFile": "logs/log.txt",
+  "logFile": "logs/ais.log",
   "redis_ip": "127.0.0.1",
   "redis_port" : "6379",
   "request_duration_seconds": 30,
 
-  "logLevel" : 100,
+  "logLevel" : 300,
 
   "_comments_logLevels": {
     "DEBUG": 100,

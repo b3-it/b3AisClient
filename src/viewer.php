@@ -24,7 +24,8 @@ try {
         exit(1);
     }
 
-    $redisPorts = [31935, 31936, 31937];
+    /** @var array $aisDataSrcPorts Used as key postfix in redis*/
+    $aisDataSrcPorts = [31935, 31936, 31937];
     $aisDataCombined = [];
 
     function readData($config, $port, &$aisDataCombined, $isCli)
@@ -54,7 +55,7 @@ try {
     $isCli = php_sapi_name() === 'cli';
 
     if (!$port) {
-        foreach ($redisPorts as $port) {
+        foreach ($aisDataSrcPorts as $port) {
             readData($config, $port, $aisDataCombined, $isCli);
         }
     } else {
@@ -65,5 +66,3 @@ try {
 } catch (Exception $e) {
     echo "Fehler beim Verbinden und Empfangen von Daten: <br>" . $e->getMessage();
 }
-
-?>
