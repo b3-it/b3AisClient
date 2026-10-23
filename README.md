@@ -50,7 +50,7 @@ Running the processor periodically (e.g. via cron) keeps the data in Redis up to
 
 ## Requirements
 
-- PHP 7.4 or newer (PHP 8.1+ when using Monolog 3)
+- PHP 8.1 or newer (tested with 8.1, 8.2, 8.3 and 8.5)
 - PHP extensions: `redis` (phpredis), `json`
 - A running Redis server
 - [Composer](https://getcomposer.org/)
