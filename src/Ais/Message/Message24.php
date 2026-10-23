@@ -12,14 +12,18 @@ class Message24 extends Message
 
     /**
      * Decodiert eine AIS-Nachricht vom Typ 24.
+     * Nur Teil A (Teilnummer 0) enthält den Schiffsnamen, Teil B enthält keinen Namen.
      *
-     * @param $messageChannel
      * @param string $aisdata168 - Die AIS-Rohdaten (168 Bit).
      */
     public function decode($aisdata168)
     {
         $this->mmsi = bindec(substr($aisdata168, 8, 30));
-        $this->name = $this->convertBinaryToAISChars($aisdata168, 90, 42);
+        $partNumber = bindec(substr($aisdata168, 38, 2));
+
+        if ($partNumber === 0) {
+            $this->name = $this->convertBinaryToShipName($aisdata168, 40, 120);
+        }
 
         return $this;
 
