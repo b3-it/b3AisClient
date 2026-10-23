@@ -32,7 +32,8 @@ class RedisData
 
 
     /**
-     * Stellt eine Verbindung zum Redis-Server her.
+     * Stellt eine Verbindung zum Redis-Server her. Beginnt redis_ip mit '/', wird die Verbindung
+     * über den Unix-Socket unter diesem Pfad aufgebaut und redis_port ignoriert.
      *
      * @throws \Exception Wenn ein Fehler bei der Verbindung mit Redis auftritt.
      */
@@ -41,7 +42,13 @@ class RedisData
     {
         try {
             $this->_redis = new \Redis();
-            $this->_redis->connect($this->redis_ip, $this->redis_port);
+
+            if ($this->isUnixSocket()) {
+                // Mit Port würde phpredis den Pfad als Hostnamen auflösen
+                $this->_redis->connect($this->redis_ip);
+            } else {
+                $this->_redis->connect($this->redis_ip, $this->redis_port);
+            }
 
         } catch (\Exception $e) {
             throw new \Exception('Fehler beim Verbinden mit Redis: ' . $e->getMessage());
@@ -138,6 +145,16 @@ class RedisData
     public function getPort()
     {
         return $this->redis_port;
+    }
+
+    /**
+     * Prüft, ob die Verbindung über einen Unix-Socket aufgebaut wird (redis_ip ist ein absoluter Pfad).
+     *
+     * @return bool
+     */
+    public function isUnixSocket()
+    {
+        return strpos($this->redis_ip, '/') === 0;
     }
 
 

@@ -216,7 +216,9 @@ class DataFetcher {
 
         try {
             $this->redisData->connect();
-            $this->logger->debug("Verbunden mit Redis, IP: {$this->redisData->getIP()}, Port: {$this->redisData->getPort()}");
+            $this->logger->debug($this->redisData->isUnixSocket()
+                ? "Verbunden mit Redis, Socket: {$this->redisData->getIP()}"
+                : "Verbunden mit Redis, IP: {$this->redisData->getIP()}, Port: {$this->redisData->getPort()}");
             $this->redisData->replace($combinedData);
             $this->logger->info("Daten erfolgreich in Redis geschrieben.");
             $this->redisData->close();

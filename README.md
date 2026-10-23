@@ -97,11 +97,13 @@ mkdir -p src/logs
 | Key                        | Description                                                        | Default         |
 |----------------------------|--------------------------------------------------------------------|-----------------|
 | `logFile`                  | Log file path, relative to `src/`                                  | `logs/ais.log`  |
-| `redis_ip`                 | Redis host                                                         | `127.0.0.1`     |
-| `redis_port`               | Redis port                                                         | `6379`          |
+| `redis_ip`                 | Redis host, or the path of a Unix socket (see below)               | `127.0.0.1`     |
+| `redis_port`               | Redis port, ignored for a Unix socket                              | `6379`          |
 | `request_duration_seconds` | How long (in seconds) data is collected from the socket per run    | –               |
 | `sources`                  | AIS source ports and their display names (see below)               | –               |
 | `logLevel`                 | Monolog log level (see table below)                                | `200` (INFO)    |
+
+To connect to Redis via a Unix socket, set `redis_ip` to the absolute path of the socket, e.g. `"redis_ip": "/var/run/redis/redis.sock"`. Any value starting with `/` is treated as a socket path. The processor and the web server user (for `viewer.php` and the map) need read and write access to the socket file; in `redis.conf` this is controlled by `unixsocket` and `unixsocketperm`. Run `php src/RedisTest.php` to check the connection with the current configuration.
 
 `sources` is the central list of AIS source ports. `start_processor.sh` starts one processor per port, `viewer.php` only accepts these ports, and the map shows one section per source with its `name` as heading. The port is also used in the Redis key `ais_data_<port>`.
 
@@ -193,6 +195,12 @@ vendor/bin/phpunit tests
 ```
 
 The tests cover the decoding of AIS sentences (message types 1, 5, 18, 24), multi-part messages, checksum validation and the JSON format written to Redis.
+
+`RedisDataTest` needs a running Redis server and is skipped otherwise. It connects to `127.0.0.1:6379` by default; use `REDIS_HOST` (host name or socket path) and `REDIS_PORT` to change this:
+
+```bash
+REDIS_HOST=/var/run/redis/redis.sock vendor/bin/phpunit tests
+```
 
 ## License
 
