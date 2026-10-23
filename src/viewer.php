@@ -18,6 +18,12 @@ try {
     $config = new Config(__DIR__.'/config/config.json');
 
     $port = $requestHandler->getPortViewer();
+
+    if ($port !== null && !filter_var($port, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 65535]])) {
+        echo "Ungültiger Port." . PHP_EOL;
+        exit(1);
+    }
+
     $redisPorts = [31935, 31936, 31937];
     $aisDataCombined = [];
 
@@ -30,7 +36,7 @@ try {
         $redisData->close();
         $aisDataCombined[$redisKey] = $aisData;
 
-        echo $isCli ? "Redis Key: $redisKey" . PHP_EOL . "Daten:" . PHP_EOL : "<p><strong>Redis Key:</strong> $redisKey</p><p><strong>Daten:</strong></p><ul>";
+        echo $isCli ? "Redis Key: $redisKey" . PHP_EOL . "Daten:" . PHP_EOL : "<p><strong>Redis Key:</strong> " . htmlspecialchars($redisKey, ENT_QUOTES) . "</p><p><strong>Daten:</strong></p><ul>";
 
         foreach ($aisData as $index => $arrayData) {
             echo $isCli ? "Schiff " . ($index + 1) . PHP_EOL : "<br><li>Schiff " . ($index + 1) . "<br>";
