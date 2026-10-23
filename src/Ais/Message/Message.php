@@ -10,6 +10,8 @@ namespace Ais\Message;
  */
 abstract class Message extends Helper
 {
+    // Mindestanzahl an Bits, die für die dekodierten Felder benötigt wird
+    const MIN_LENGTH = 38;
 
     //public $channel = 0; Indikator für nicht dekodierte Nachricht, AIS-Klasse nicht definiert
     public $name = '';

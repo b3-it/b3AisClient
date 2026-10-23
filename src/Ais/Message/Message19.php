@@ -4,6 +4,8 @@ namespace Ais\Message;
 
 class Message19 extends Message
 {
+    // Bis zum Ende des Schiffsnamens (Bit 143-262)
+    const MIN_LENGTH = 263;
 
     public function __construct($messageType,$receivedTimestamp)
     {

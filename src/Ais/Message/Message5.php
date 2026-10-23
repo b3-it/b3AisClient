@@ -4,6 +4,8 @@ namespace Ais\Message;
 
 class Message5 extends Message
 {
+    // Bis zum Ende des Schiffsnamens (Bit 112-231)
+    const MIN_LENGTH = 232;
     public function __construct($messageType,$receivedTimestamp)
     {
         parent::__construct($messageType, $receivedTimestamp);

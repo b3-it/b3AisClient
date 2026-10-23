@@ -4,6 +4,8 @@ namespace Ais\Message;
 
 class Message18 extends Message
 {
+    // Bis zum Ende des Breitengrads (Bit 85-111)
+    const MIN_LENGTH = 112;
 
     public function __construct($messageType,$receivedTimestamp)
     {

@@ -122,6 +122,17 @@ class DecoderTest extends TestCase
         $this->assertSame('EVER DIADEM', $result[0]->name);
     }
 
+    public function testTruncatedMessageIsIgnored()
+    {
+        // Nachricht vom Typ 1, die nach 15 Zeichen (90 Bit) und damit vor dem Breitengrad abgeschnitten ist
+        $result = $this->helper->decodeMessages(
+            [$this->createSentence(1, 1, '', 'B', substr('177KQJ5000G?tO`K>RA1wUbN0TKH', 0, 15), 0)],
+            self::RECEIVED_TIMESTAMP
+        );
+
+        $this->assertSame([], $result);
+    }
+
     public function testConvertBinaryToShipNameRemovesPadding()
     {
         // "AB C" gefolgt von Füllzeichen: '@' (0) und Leerzeichen (32)

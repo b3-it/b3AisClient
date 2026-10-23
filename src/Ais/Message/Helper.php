@@ -232,7 +232,8 @@ class Helper
                     break;
             }
 
-            if(!empty($message)) {
+            // Zu kurze (abgeschnittene) Nachrichten würden fehlende Bits als 0 dekodieren, z. B. als Position 0°/0°
+            if(!empty($message) && strlen($bits) >= $message::MIN_LENGTH) {
                 $decodedMessage = $message->decode($bits);
                 $decodedMessages[] = $decodedMessage;
             }
