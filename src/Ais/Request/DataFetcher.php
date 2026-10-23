@@ -142,13 +142,10 @@ class DataFetcher {
                         if (!empty($datum->name)) {
                             $combinedData[$mmsi]->name = $datum->name;
                         }
-                        if (!is_null($datum->longitude)) {
+                        // Der Zeitstempel gibt das Alter der Position an und wird daher nur mit ihr aktualisiert
+                        if (!is_null($datum->longitude) && !is_null($datum->latitude)) {
                             $combinedData[$mmsi]->longitude = $datum->longitude;
-                        }
-                        if (!is_null($datum->latitude)) {
                             $combinedData[$mmsi]->latitude = $datum->latitude;
-                        }
-                        if (!is_null($datum->receivedTimestamp)) {
                             $combinedData[$mmsi]->receivedTimestamp = $datum->receivedTimestamp;
                         }
                     } else {
@@ -158,11 +155,12 @@ class DataFetcher {
                 }
 
 
-                if (!empty($datum->mmsi)) {
+                if (!empty($decodedData)) {
+                    $lastMmsi = trim(end($decodedData)->mmsi);
                     $this->logger->info(sprintf(
                         "Letzte Nachricht von: MMSI: %s Name: %s. Empfangen am: %s",
-                        $datum->mmsi,
-                        $combinedData[$datum->mmsi]->name ?? 'Unbekannt',
+                        $lastMmsi,
+                        $combinedData[$lastMmsi]->name ?: 'Unbekannt',
                         date('Y-m-d H:i:s', $receivedTimestamp)
                     ));
                 }
